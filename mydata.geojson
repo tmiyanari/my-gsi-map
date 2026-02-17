@@ -30,7 +30,22 @@
         ],
         "type": "Point"
       }
+    },
+    {
+      "id": "65035cc485d9c10571050fdba4b0bcca",
+      "type": "Feature",
+      "properties": {
+        "name": "皇居",
+        "time": "16:02:09"
+      },
+      "geometry": {
+        "coordinates": [
+          139.75189379882988,
+          35.68497384376465
+        ],
+        "type": "Point"
+      }
     }
   ],
-  "last_updated": 1771311286001
+  "last_updated": 1771311731478
 }
