@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
     <meta charset="utf-8" />
-    <title>編集GIS</title>
+    <title>名前表示　編集GIS</title>
     <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
     <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
     <link href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet" />
@@ -88,26 +88,44 @@
 const draw = new MapboxDraw({
     displayControlsDefault: false,
     styles: [
-        // 1. 通常状態（オレンジ）
+        // 1. 点の見た目（通常時）
         {
             'id': 'points-static',
             'type': 'circle',
             'filter': ['all', ['==', '$type', 'Point'], ['==', 'meta', 'feature'], ['==', 'active', 'false']],
             'paint': { 'circle-radius': 10, 'circle-color': '#ff4500' }
         },
-        // 2. 選択状態（黄色）
+        // 2. 点の見た目（選択時）
         {
             'id': 'points-active',
             'type': 'circle',
             'filter': ['all', ['==', '$type', 'Point'], ['==', 'meta', 'feature'], ['==', 'active', 'true']],
             'paint': { 'circle-radius': 12, 'circle-color': '#ffff00', 'circle-stroke-width': 2, 'circle-stroke-color': '#000' }
         },
-        // 3. ★移動中・ドラッグ操作を有効にするための設定
+        // 3. 【新設】名前を表示するレイヤー
+        {
+            'id': 'points-labels',
+            'type': 'symbol',
+            'filter': ['all', ['==', '$type', 'Point'], ['==', 'meta', 'feature']],
+            'layout': {
+                'text-field': ['get', 'name'], // properties内のnameを表示
+                'text-variable-anchor': ['top', 'bottom', 'left', 'right'],
+                'text-radial-offset': 1.2, // 点から少し離す
+                'text-justify': 'auto',
+                'text-size': 14
+            },
+            'paint': {
+                'text-color': '#000',
+                'text-halo-color': '#fff', // 文字の周りに白縁をつけて見やすく
+                'text-halo-width': 2
+            }
+        },
+        // 4. 移動・ドラッグ用の設定（赤点）
         {
             'id': 'points-drag',
             'type': 'circle',
             'filter': ['all', ['==', '$type', 'Point'], ['==', 'meta', 'vertex']], 
-            'paint': { 'circle-radius': 12, 'circle-color': '#f00' } // ドラッグの基点を赤く表示
+            'paint': { 'circle-radius': 12, 'circle-color': '#f00' }
         }
     ]
 });
