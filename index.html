@@ -12,6 +12,16 @@
         body { margin: 0; padding: 0; }
         #map { position: absolute; top: 0; bottom: 0; width: 100%; }
         #console-log { position: absolute; bottom: 30px; left: 10px; background: white; padding: 10px; max-width: 300px; max-height: 100px; overflow: auto; border: 2px solid #FF4500; z-index: 10; }
+/* 描画中のポインタを強制的に有効にする */
+.mapboxgl-canvas-container.mapboxgl-interactive,
+.maplibregl-canvas-container.maplibregl-interactive {
+    cursor: crosshair !important;
+}
+
+/* 描画コントロールが他の要素に隠れないようにする */
+.mapboxgl-ctrl-group, .maplibregl-ctrl-group {
+    z-index: 100 !important;
+}        
     </style>
 </head>
 <body>
