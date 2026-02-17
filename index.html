@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
     <meta charset="utf-8" />
-    <title>名前表示!　編集GIS</title>
+    <title>名前表示編集GIS</title>
     <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
     <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
     <link href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet" />
@@ -36,8 +36,8 @@ const map = new maplibregl.Map({
     container: 'map',
     style: {
         version: 8,
-        // フォントデータを設定（これが無いと文字が出ない）
-        glyphs: "https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf",
+        // フォントの提供元をこれに変えてみてください
+        glyphs: "https://fonts.openmaptiles.org/{fontstack}/{range}.pbf",
         sources: {
             'gsi-tiles': {
                 type: 'raster',
@@ -105,16 +105,17 @@ const draw = new MapboxDraw({
             'paint': { 'circle-radius': 12, 'circle-color': '#ffff00', 'circle-stroke-width': 2, 'circle-stroke-color': '#000' }
         },
         // 3. 【新設】名前を表示するレイヤー
-       {
+// drawのstyles配列の中の「points-labels」の部分だけ書き換えてください
+{
     'id': 'points-labels',
     'type': 'symbol',
     'filter': ['all', ['==', '$type', 'Point'], ['==', 'meta', 'feature']],
     'layout': {
-        'text-field': ['get', 'name'], // ← ここが properties.name と一致しているか
-        'text-size': 16,
-        'text-font': ['Open Sans Regular'], // glyphsにあるフォント名を指定（省略可）
-        'text-offset': [0, 1.5],
-        'text-anchor': 'top'
+        'text-field': ['coalesce', ['get', 'name'], '名称未設定'], // 名前がなければ「名称未設定」と出す
+        'text-font': ['Open Sans Regular', 'Arial Unicode MS Regular'], // フォントを明示
+        'text-size': 14,
+        'text-anchor': 'top',
+        'text-offset': [0, 1.2]
     },
     'paint': {
         'text-color': '#000000',
