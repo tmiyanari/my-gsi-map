@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
     <meta charset="utf-8" />
-    <title>名前編集マイマップ!</title>
+    <title>名前編集マイマップ///</title>
     <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
     <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
     <link href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet" />
@@ -142,22 +142,18 @@ map.on('click', (e) => {
             draw.add({ type: 'Feature', properties: { name: name }, geometry: { type: 'Point', coordinates: [e.lngLat.lng, e.lngLat.lat] } });
             refreshLabels();
         } else {
-            // エラー回避：存在するレイヤー（labels-layer）だけをチェックする
-            const features = map.queryRenderedFeatures(e.point, {
-                layers: ['labels-layer']
-            });
+            // ラベルレイヤーをクリック判定
+            const features = map.queryRenderedFeatures(e.point, { layers: ['labels-layer'] });
 
             if (features.length > 0) {
                 const target = features[0];
                 const currentName = target.properties.name || "名前なし";
                 
-                // Draw内のIDを取得（MapLibreのFeature IDまたはプロパティから）
-                const featureId = target.id || target.properties.id;
-
+                // 座標を文字列として渡すと誤差が出にくいため、個別に渡す
                 const popupContent = `
                     <div style="padding:10px; min-width:120px;">
                         <b id="popup-name">${currentName}</b><br>
-                        <button onclick="editName('${featureId}', ${e.lngLat.lng}, ${e.lngLat.lat})" 
+                        <button onclick="window.editName(null, ${e.lngLat.lng}, ${e.lngLat.lat})" 
                                 style="margin-top:8px; padding:4px 8px; font-size:11px; cursor:pointer;">✏️ 名前を変更</button>
                     </div>
                 `;
@@ -171,28 +167,22 @@ map.on('click', (e) => {
     });
 
 // --- 名前編集関数 (ここから) ---
-window.editName = function(id, lng, lat) {
-    // 1. まずはIDで検索
-    let feature = draw.get(id);
+window.editName = function(dummyId, lng, lat) {
+    const allFeatures = draw.getAll().features;
     
-    // 2. IDで見つからない場合、座標の近さで検索
-    if (!feature) {
-        const allFeatures = draw.getAll().features;
-        feature = allFeatures.find(f => {
-            const coords = f.geometry.coordinates;
-            // 座標の誤差が非常に小さいものを特定
-            return Math.abs(coords[0] - lng) < 0.0001 && 
-                   Math.abs(coords[1] - lat) < 0.0001;
-        });
-    }
+    // クリックした位置から一番近いフィーチャを探す（判定距離を少し広げる）
+    let feature = allFeatures.find(f => {
+        const coords = f.geometry.coordinates;
+        // 誤差 0.0005度（約50メートル程度）まで許容して探す
+        return Math.abs(coords[0] - lng) < 0.0005 && 
+               Math.abs(coords[1] - lat) < 0.0005;
+    });
 
-    // 3. 検索に失敗した場合のガード（ここでの return は関数内なのでOK）
     if (!feature) {
-        alert("地点を特定できませんでした。");
+        alert("地点を特定できませんでした。もう少しピンの近くをクリックしてください。");
         return; 
     }
 
-    // 4. 実際の編集処理
     const oldName = feature.properties.name || "";
     const newName = prompt("新しい名前を入力:", oldName);
     
@@ -201,15 +191,12 @@ window.editName = function(id, lng, lat) {
         draw.setFeatureProperty(feature.id, 'name', newName);
         
         // 看板（ラベル）を更新
-        if (typeof refreshLabels === 'function') {
-            refreshLabels();
-        }
+        if (typeof refreshLabels === 'function') refreshLabels();
         
-        // ポップアップ内の表示も即座に書き換え
+        // UIの表示を更新
         const nameEl = document.getElementById('popup-name');
         if (nameEl) nameEl.innerText = newName;
-        
-        document.getElementById('status').innerText = "名前を更新しました";
+        document.getElementById('status').innerText = "名前を更新しました。保存してください。";
     }
 };
 // --- 名前編集関数 (ここまで) ---
