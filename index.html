@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
     <meta charset="utf-8" />
-    <title>１編集できる地理院地図</title>
+    <title>２編集できる地理院地図</title>
     <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
     <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
     <link href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet" />
@@ -91,20 +91,44 @@
     logDiv.innerText = `「${locationName}」を追加しました`;
     console.log("最新のGeoJSON:", JSON.stringify(draw.getAll()));
 });
-        map.on('click', (e) => {
-    // 編集モード中はポップアップを出さない
-    if (isAddMode) return;
+map.on('click', (e) => {
+    if (isAddMode) return; // 地点追加モード中は無視
 
-    const features = draw.getFeatureAt(e.point);
-    if (features) {
-        const name = features.properties.name || "名称未設定";
-        const time = features.properties.time || "不明";
+    // 1. クリック地点の周囲（5ピクセル程度）にデータがあるか探す
+    const bbox = [
+        [e.point.x - 5, e.point.y - 5],
+        [e.point.x + 5, e.point.y + 5]
+    ];
+    
+    // 描画ツールが管理している全データから、クリック位置にあるものを取得
+    const features = map.queryRenderedFeatures(bbox, {
+        layers: [
+            'gl-draw-point-static.cold', 
+            'gl-draw-point-active.cold',
+            'gl-draw-point-static.hot',
+            'gl-draw-point-active.hot'
+        ]
+    });
+
+    if (features.length > 0) {
+        // 描画ツールから実際のプロパティを取得
+        const featureId = features[0].properties.id;
+        const feature = draw.get(featureId);
+        
+        const name = feature.properties.name || "名称未設定";
+        const time = feature.properties.time || "不明";
 
         new maplibregl.Popup()
             .setLngLat(e.lngLat)
-            .setHTML(`<strong>名前:</strong> ${name}<br><strong>登録時:</strong> ${time}`)
+            .setHTML(`
+                <div style="color:#333; padding:5px;">
+                    <strong>地点名:</strong> ${name}<br>
+                    <strong>登録日:</strong> ${time}
+                </div>
+            `)
             .addTo(map);
     }
+});
 });
     </script>
 </body>
