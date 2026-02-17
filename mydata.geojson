@@ -1,15 +1,1 @@
-{
-  "type": "FeatureCollection",
-  "features": [
-    {
-      "type": "Feature",
-      "properties": { "name": "東京駅" },
-      "geometry": { "type": "Point", "coordinates": [139.767, 35.681] }
-    },
-    {
-      "type": "Feature",
-      "properties": { "name": "国土地理院（関東地方測量部）" },
-      "geometry": { "type": "Point", "coordinates": [139.749, 35.694] }
-    }
-  ]
-}
+{ "type": "FeatureCollection", "features": [] }
