@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
     <meta charset="utf-8" />
-    <title>マイマップ</title>
+    <title>名前編集てすとマイマップ</title>
     <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
     <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
     <link href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet" />
@@ -142,21 +142,56 @@ map.on('click', (e) => {
             draw.add({ type: 'Feature', properties: { name: name }, geometry: { type: 'Point', coordinates: [e.lngLat.lng, e.lngLat.lat] } });
             refreshLabels();
         } else {
-            // ★ここを修正：名前が表示されている「labels-layer」を直接クリック判定する
+            // ラベルレイヤーまたは地点レイヤーをクリック判定
             const features = map.queryRenderedFeatures(e.point, {
-                layers: ['labels-layer'] // ラベルレイヤーを狙い撃ち
+                layers: ['labels-layer', 'gl-draw-point-static']
             });
 
             if (features.length > 0) {
-                const name = features[0].properties.name || "名前なし";
-                
-                new maplibregl.Popup({ closeButton: true }) // 閉じボタンあり
-                    .setLngLat(e.lngLat)
-                    .setHTML(`<div style="padding:8px; font-size:14px;"><b>${name}</b></div>`)
-                    .addTo(map);
+                // Drawのデータから最新の情報を取得
+                const drawData = draw.getAll().features;
+                const target = drawData.find(d => 
+                    d.geometry.coordinates[0].toFixed(5) === features[0].geometry.coordinates[0].toFixed(5)
+                );
+
+                if (target) {
+                    const currentName = target.properties.name || "名前なし";
+                    
+                    // ポップアップ内に「編集ボタン」を設置
+                    const popupContent = `
+                        <div style="padding:10px; min-width:120px;">
+                            <b id="popup-name">${currentName}</b><br>
+                            <button onclick="editName('${target.id}')" style="margin-top:8px; padding:4px 8px; font-size:11px; cursor:pointer;">✏️ 名前を変更</button>
+                        </div>
+                    `;
+
+                    new maplibregl.Popup({ closeButton: true })
+                        .setLngLat(e.lngLat)
+                        .setHTML(popupContent)
+                        .addTo(map);
+                }
             }
         }
     });
+
+    // ★ 名前を書き換えるための関数 (グローバルに配置)
+    window.editName = (id) => {
+        const feature = draw.get(id);
+        const oldName = feature.properties.name || "";
+        const newName = prompt("新しい名前を入力してください:", oldName);
+        
+        if (newName !== null && newName !== "") {
+            // Drawのデータを更新
+            draw.setFeatureProperty(id, 'name', newName);
+            // ラベルレイヤー（看板）も更新
+            refreshLabels();
+            // ポップアップの表示も即座に更新
+            const nameEl = document.getElementById('popup-name');
+            if (nameEl) nameEl.innerText = newName;
+            
+            document.getElementById('status').innerText = "名前を変更しました（保存を忘れずに）";
+        }
+    };
 
     document.getElementById('btn-del').onclick = () => {
         const ids = draw.getSelectedIds();
