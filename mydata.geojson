@@ -1,36 +1,3 @@
-{
-  "type": "FeatureCollection",
-  "features": [
-    {
-      "id": "845c8e951fd336c6014cb524b78eda8c",
-      "type": "Feature",
-      "properties": {
-        "name": "新規地点",
-        "time": "14:01:37"
-      },
-      "geometry": {
-        "coordinates": [
-          139.72168139648596,
-          35.66977427720727
-        ],
-        "type": "Point"
-      }
-    },
-    {
-      "id": "d0277d74c36ddaa61fbcffc7e921785b",
-      "type": "Feature",
-      "properties": {
-        "name": "新規地点",
-        "time": "14:06:39"
-      },
-      "geometry": {
-        "coordinates": [
-          139.75394653447495,
-          35.68452039944344
-        ],
-        "type": "Point"
-      }
-    },
     {
       "id": "cb59050ceb82af723e8d0f806ce05b0b",
       "type": "Feature",
