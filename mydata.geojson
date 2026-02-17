@@ -1,4 +1,20 @@
 {
   "type": "FeatureCollection",
-  "features": []
+  "features": [
+    {
+      "id": "845c8e951fd336c6014cb524b78eda8c",
+      "type": "Feature",
+      "properties": {
+        "name": "新規地点",
+        "time": "14:01:37"
+      },
+      "geometry": {
+        "coordinates": [
+          139.75567034912217,
+          35.724701393837705
+        ],
+        "type": "Point"
+      }
+    }
+  ]
 }
