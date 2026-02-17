@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
     <meta charset="utf-8" />
-    <title>編集GIS</title>
+    <title>new編集GIS</title>
     <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
     <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
     <link href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet" />
@@ -110,6 +110,49 @@
             }
             
         });
+        const GITHUB_TOKEN = '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';
+const REPO_PATH = 'tmiyanari/tmiyanari.github.io'; // ユーザー名/リポジトリ名
+const FILE_PATH = 'mydata.geojson';
+
+document.getElementById('btn-save').onclick = async () => {
+    const btn = document.getElementById('btn-save');
+    btn.innerText = "保存中...";
+    
+    const content = JSON.stringify(draw.getAll(), null, 2);
+    const message = "地図データを更新: " + new Date().toLocaleString();
+
+    try {
+        // 1. 現在のファイルの情報を取得（SHAというIDが必要なため）
+        const res = await fetch(`https://api.github.com/repos/${REPO_PATH}/contents/${FILE_PATH}`, {
+            headers: { 'Authorization': `token ${GITHUB_TOKEN}` }
+        });
+        const fileData = await res.json();
+
+        // 2. 上書きアップロード
+        const updateRes = await fetch(`https://api.github.com/repos/${REPO_PATH}/contents/${FILE_PATH}`, {
+            method: 'PUT',
+            headers: {
+                'Authorization': `token ${GITHUB_TOKEN}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                message: message,
+                content: btoa(unescape(encodeURIComponent(content))), // 文字化け対策のエンコード
+                sha: fileData.sha // これがないと上書きできない
+            })
+        });
+
+        if (updateRes.ok) {
+            alert("クラウドへの保存に成功しました！");
+            btn.innerText = "☁️ GitHubへ保存";
+        } else {
+            throw new Error();
+        }
+    } catch (err) {
+        alert("保存に失敗しました。トークンや設定を確認してください。");
+        btn.innerText = "再試行";
+    }
+};
     </script>
 </body>
 </html>
