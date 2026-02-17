@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
     <meta charset="utf-8" />
-    <title>編集GIS</title>
+    <title>＿編集GIS</title>
     <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
     <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
     <link href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet" />
@@ -227,11 +227,11 @@ document.getElementById('btn-delete').onclick = () => {
                 });
 
               if (updateRes.ok) {
-    alert("クラウドへの保存に成功しました！");
-    // 保存した瞬間のデータをブラウザにも覚えさせる（ここを追加）
-    localStorage.setItem('map_data_backup', content); 
-    btn.innerText = "☁️ GitHubへ保存";
-                } else {
+        alert("クラウドへの保存に成功しました！");
+        // 今のデータをブラウザにも覚えさせる
+        localStorage.setItem('map_data_backup', content); 
+        btn.innerText = "☁️ GitHubへ保存";
+    } else {
                     const errorInfo = await updateRes.json();
                     console.error(errorInfo);
                     throw new Error("保存に失敗しました。");
