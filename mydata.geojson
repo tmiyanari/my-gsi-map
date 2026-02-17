@@ -1,0 +1,10 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": { "name": "テスト地点" },
+      "geometry": { "type": "Point", "coordinates": [139.767, 35.681] }
+    }
+  ]
+}
