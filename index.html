@@ -2,313 +2,243 @@
 <html lang="ja">
 <head>
     <meta charset="utf-8" />
-    <title>!！名前表示編集GIS</title>
+    <title>マイ編集GIS - クラウド同期版</title>
     <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
     <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
     <link href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet" />
     <script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-draw/v1.4.3/mapbox-gl-draw.js"></script>
     <link rel="stylesheet" href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-draw/v1.4.3/mapbox-gl-draw.css" />
     <style>
-        body { margin: 0; padding: 0; }
+        body { margin: 0; padding: 0; font-family: sans-serif; }
         #map { position: absolute; top: 0; bottom: 0; width: 100%; }
-        #ui-panel { position: absolute; top: 10px; left: 10px; z-index: 100; display: flex; flex-direction: column; gap: 10px; }
-        button { padding: 10px; cursor: pointer; background: white; border: 2px solid #333; border-radius: 4px; font-weight: bold; }
-        #console-log { background: rgba(255, 255, 255, 0.9); padding: 10px; border: 1px solid #ccc; max-width: 250px; font-size: 12px; pointer-events: none; }
+        #ui-panel { position: absolute; top: 10px; left: 10px; z-index: 100; display: flex; flex-direction: column; gap: 8px; width: 200px; }
+        button { padding: 10px; cursor: pointer; background: white; border: 1px solid #ccc; border-radius: 4px; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        button:hover { background: #f0f0f0; }
+        #console-log { background: rgba(255, 255, 255, 0.9); padding: 10px; border: 1px solid #ccc; font-size: 12px; pointer-events: none; border-radius: 4px; }
+        .layer-btns { display: flex; gap: 2px; }
+        .layer-btns button { flex: 1; padding: 5px; font-size: 11px; }
     </style>
 </head>
 <body>
+
 <div id="ui-panel">
-    <button id="btn-add-point">📍 地点追加: OFF</button>
-    
-    <button id="btn-layer-std">🗺️ 標準</button>
-    <button id="btn-layer-pale">⚪ 淡色</button>
-    <button id="btn-layer-ort">🛰️ 写真</button>
-
+    <div class="layer-btns">
+        <button id="btn-layer-std">標準</button>
+        <button id="btn-layer-pale">淡色</button>
+        <button id="btn-layer-ort">写真</button>
+    </div>
+    <button id="btn-add-point" style="background: #007bff; color: white; border: none;">📍 地点追加: OFF</button>
+    <button id="btn-delete" style="background: #dc3545; color: white; border: none;">🗑️ 選択を削除</button>
     <button id="btn-save" style="background: #28a745; color: white; border: none;">☁️ GitHubへ保存</button>
-    <button id="btn-delete" style="background: #dc3545; color: white; border: none;">🗑️ 選択した地点を削除</button>
-    <div id="console-log">地図をクリックして操作</div>
+    <div id="console-log">地図をロード中...</div>
 </div>
-    <div id="map"></div>
 
-    <script>
-        // 1. 地図初期化
-const map = new maplibregl.Map({
-    container: 'map',
-    style: {
-        version: 8,
-        // フォントの提供元をこれに変えてみてください
-        glyphs: "https://fonts.openmaptiles.org/{fontstack}/{range}.pbf",
-        sources: {
-            'gsi-tiles': {
-                type: 'raster',
-                tiles: ['https://cyberjapandata.gsi.go.jp/xyz/std/{z}/{x}/{y}.png'],
-                tileSize: 256,
-                attribution: "地理院地図"
-            }
-        },
-        layers: [{ id: 'gsi-layer', type: 'raster', source: 'gsi-tiles' }]
-    },
-    center: [139.767, 35.681],
-    zoom: 12
-});
-// 地図読み込み時の処理
-       map.on('load', async () => {
-    // 1. ローカルバックアップを読み込む
-    const localDataRaw = localStorage.getItem('map_data_backup');
-    let localData = localDataRaw ? JSON.parse(localDataRaw) : null;
+<div id="map"></div>
 
-    if (localData) {
-        draw.add(localData);
-        console.log("ローカルバックアップを表示しました");
-    }
+<script>
+    // --- 設定項目 ---
+    const GITHUB_TOKEN = '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'; 
+    const REPO_PATH = 'tmiyanari/my-gsi-map';
+    const FILE_PATH = 'mydata.geojson';
 
-    try {
-        const url = `https://raw.githubusercontent.com/${REPO_PATH}/main/${FILE_PATH}?t=${new Date().getTime()}`;
-        const res = await fetch(url, { cache: 'no-store' });
-
-        if (res.ok) {
-            const githubData = await res.json();
-            
-            // ★【ここが重要】GitHubのデータがローカルより新しい場合だけ更新する
-            const localTime = localData?.last_updated || 0;
-            const githubTime = githubData.last_updated || 0;
-
-            if (githubTime >= localTime) {
-                draw.deleteAll();
-                draw.add(githubData);
-                localStorage.setItem('map_data_backup', JSON.stringify(githubData));
-                console.log("GitHubの方が新しいので同期しました");
-            } else {
-                console.log("GitHubがまだ古い（反映待ち）ので、ローカルデータを優先します");
-            }
-        }
-    } catch (err) {
-        console.error("同期エラー:", err);
-    }
-});
-        // 2. 描画ツール初期化
-const draw = new MapboxDraw({
-    displayControlsDefault: false,
-    styles: [
-        // 1. 点の見た目（通常時）
-        {
-            'id': 'points-static',
-            'type': 'circle',
-            'filter': ['all', ['==', '$type', 'Point'], ['==', 'meta', 'feature'], ['==', 'active', 'false']],
-            'paint': { 'circle-radius': 10, 'circle-color': '#ff4500' }
-        },
-        // 2. 点の見た目（選択時）
-        {
-            'id': 'points-active',
-            'type': 'circle',
-            'filter': ['all', ['==', '$type', 'Point'], ['==', 'meta', 'feature'], ['==', 'active', 'true']],
-            'paint': { 'circle-radius': 12, 'circle-color': '#ffff00', 'circle-stroke-width': 2, 'circle-stroke-color': '#000' }
-        },
-        // 3. 【新設】名前を表示するレイヤー
-// drawのstyles配列の中の「points-labels」の部分だけ書き換えてください
-{
-    'id': 'points-labels',
-    'type': 'symbol',
-    'filter': ['all', ['==', '$type', 'Point'], ['==', 'meta', 'feature']],
-    'layout': {
-        // 最もピュアな指定に戻します
-        'text-field': '{name}', 
-        'text-font': ['Open Sans Regular'],
-        'text-size': 14,
-        'text-anchor': 'top',
-        'text-offset': [0, 1.2]
-    },
-    'paint': {
-        'text-color': '#000000',
-        'text-halo-color': '#ffffff',
-        'text-halo-width': 2
-    }
-},
-        // 4. 移動・ドラッグ用の設定（赤点）
-        {
-            'id': 'points-drag',
-            'type': 'circle',
-            'filter': ['all', ['==', '$type', 'Point'], ['==', 'meta', 'vertex']], 
-            'paint': { 'circle-radius': 12, 'circle-color': '#f00' }
-        }
-    ]
-});
-        map.addControl(draw);
-
-        let isAddMode = false;
-        const addBtn = document.getElementById('btn-add-point');
-        const logDiv = document.getElementById('console-log');
-
-        addBtn.onclick = () => {
-            isAddMode = !isAddMode;
-            addBtn.style.background = isAddMode ? '#ff4500' : '#fff';
-            addBtn.style.color = isAddMode ? '#fff' : '#000';
-            addBtn.innerText = isAddMode ? '📍 地図をクリックして配置' : '📍 地点追加: OFF';
-        };
-
-        // 3. クリックイベント（追加と表示を一つの関数で管理）
-        map.on('click', (e) => {
-            if (isAddMode) {
-                // --- 追加モード時の処理 ---
-                const locationName = prompt("場所の名前を入力してください", "新規地点");
-                if (locationName === null) return;
-
-                const coords = [e.lngLat.lng, e.lngLat.lat];
-                draw.add({
-                    type: 'Feature',
-                    properties: { name: locationName, time: new Date().toLocaleTimeString() },
-                    geometry: { type: 'Point', coordinates: coords }
-                });
-                logDiv.innerText = `「${locationName}」を追加`;
-                console.log("最新GeoJSON:", JSON.stringify(draw.getAll()));
-            } else {
-                // --- ポップアップ表示モードの処理（強化版） ---
-                
-                // 現在地図に描画されている全データを取得
-                const allData = draw.getAll();
-                
-                // クリックした地点の座標（e.lngLat）に近い地点を探す
-                const clickedPoint = [e.lngLat.lng, e.lngLat.lat];
-                
-                // もっとも近いフィーチャを探す（簡易的な距離判定）
-                const clickedFeature = allData.features.find(f => {
-                    if (f.geometry.type !== 'Point') return false;
-                    const coords = f.geometry.coordinates;
-                    // 緯度経度の差がごくわずか（約100m以内）なら「クリックした」とみなす
-                    return Math.abs(coords[0] - clickedPoint[0]) < 0.001 && 
-                           Math.abs(coords[1] - clickedPoint[1]) < 0.001;
-                });
-
-                if (clickedFeature) {
-                    const name = clickedFeature.properties.name || "名称未設定";
-                    const time = clickedFeature.properties.time || "不明";
-
-                    new maplibregl.Popup()
-                        .setLngLat(clickedFeature.geometry.coordinates)
-                        .setHTML(`
-                            <div style="font-family:sans-serif; padding:5px;">
-                                <strong style="color:#ff4500; font-size:1.1em;">${name}</strong><br>
-                                <hr style="margin:5px 0; border:0; border-top:1px solid #eee;">
-                                <small>登録時刻: ${time}</small>
-                            </div>
-                        `)
-                        .addTo(map);
+    // 1. 地図の初期化
+    const map = new maplibregl.Map({
+        container: 'map',
+        style: {
+            version: 8,
+            glyphs: "https://fonts.openmaptiles.org/{fontstack}/{range}.pbf",
+            sources: {
+                'gsi-tiles': {
+                    type: 'raster',
+                    tiles: ['https://cyberjapandata.gsi.go.jp/xyz/std/{z}/{x}/{y}.png'],
+                    tileSize: 256,
+                    attribution: "地理院地図"
                 }
-            }
-            
-        });
-        const GITHUB_TOKEN = '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';
-
-        const REPO_PATH = 'tmiyanari/my-gsi-map'; 
-        const FILE_PATH = 'mydata.geojson';
-document.getElementById('btn-delete').onclick = () => {
-    // 1. 現在選択されている（黄色くなっている）地点を取得
-    const selectedFeatures = draw.getSelected();
-
-    if (selectedFeatures.features.length > 0) {
-        if (confirm(`${selectedFeatures.features.length} 件の地点を削除しますか？`)) {
-            // 2. 地図上から削除
-            draw.delete(selectedFeatures.features.map(f => f.id));
-            
-            // 3. 削除後の状態でGitHubに保存
-            // ※先ほど作った「保存ボタン」の処理を自動で呼び出すと楽です
-            alert("削除しました。変更を確定させるために『GitHubへ保存』を押してください。");
-        }
-    } else {
-        alert("削除したい地点をまずクリックして選択（黄色に）してください。");
-    }
-};
-        document.getElementById('btn-save').onclick = async () => {
-            const btn = document.getElementById('btn-save');
-            const originalText = btn.innerText;
-            btn.innerText = "保存中...";
-            btn.disabled = true; // 二重押し防止
-            // draw.getAll() で取得したデータに、今の時間を刻印する
-const rawData = draw.getAll();
-rawData.last_updated = new Date().getTime(); // ★これを追加
-const content = JSON.stringify(rawData, null, 2);
-            
-            const message = "地図データを更新: " + new Date().toLocaleString();
-
-            try {
-                // 1. 現在のファイルの情報を取得（SHA取得）
-                const res = await fetch(`https://api.github.com/repos/${REPO_PATH}/contents/${FILE_PATH}`, {
-                    headers: { 'Authorization': `token ${GITHUB_TOKEN}` }
-                });
-                
-                if (!res.ok) throw new Error("ファイルが見つかりません。先にGitHub上に mydata.geojson を作成してください。");
-                
-                const fileData = await res.json();
-
-                // 2. 上書きアップロード
-                const updateRes = await fetch(`https://api.github.com/repos/${REPO_PATH}/contents/${FILE_PATH}`, {
-                    method: 'PUT',
-                    headers: {
-                        'Authorization': `token ${GITHUB_TOKEN}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        message: message,
-                        content: btoa(unescape(encodeURIComponent(content))), 
-                        sha: fileData.sha 
-                    })
-                });
-
-              if (updateRes.ok) {
-        alert("クラウドへの保存に成功しました！");
-        // 今のデータをブラウザにも覚えさせる
-        localStorage.setItem('map_data_backup', content); 
-        btn.innerText = "☁️ GitHubへ保存";
-    } else {
-                    const errorInfo = await updateRes.json();
-                    console.error(errorInfo);
-                    throw new Error("保存に失敗しました。");
-                }
-            } catch (err) {
-                alert(err.message);
-            } finally {
-                btn.innerText = originalText;
-                btn.disabled = false;
-            }
-        
-};
-        // レイヤー（背景地図）を切り替える関数
-const switchLayer = (layerType) => {
-    const tiles = {
-        'std': 'https://cyberjapandata.gsi.go.jp/xyz/std/{z}/{x}/{y}.png',
-        'pale': 'https://cyberjapandata.gsi.go.jp/xyz/pale/{z}/{x}/{y}.png',
-        'ort': 'https://cyberjapandata.gsi.go.jp/xyz/ort/{z}/{x}/{y}.jpg'
-    };
-
-    if (map.getSource('gsi-tiles')) {
-        map.removeLayer('gsi-layer');
-        map.removeSource('gsi-tiles');
-    }
-
-    map.addSource('gsi-tiles', {
-        type: 'raster',
-        tiles: [tiles[layerType]],
-        tileSize: 256,
-        attribution: "地理院地図"
+            },
+            layers: [{ id: 'gsi-layer', type: 'raster', source: 'gsi-tiles' }]
+        },
+        center: [139.767, 35.681],
+        zoom: 12
     });
 
-    // 背景として追加
-    map.addLayer({
-        id: 'gsi-layer',
-        type: 'raster',
-        source: 'gsi-tiles'
-    }, map.getStyle().layers[0].id); // 一番下に追加
+    // 2. 描画ツールのスタイル（名前表示機能付き）
+    const draw = new MapboxDraw({
+        displayControlsDefault: false,
+        styles: [
+            // 通常の点
+            {
+                'id': 'gl-draw-point-static',
+                'type': 'circle',
+                'filter': ['all', ['==', '$type', 'Point'], ['==', 'meta', 'feature'], ['==', 'active', 'false']],
+                'paint': { 'circle-radius': 8, 'circle-color': '#ff4500', 'circle-stroke-width': 2, 'circle-stroke-color': '#fff' }
+            },
+            // 選択中の点
+            {
+                'id': 'gl-draw-point-active',
+                'type': 'circle',
+                'filter': ['all', ['==', '$type', 'Point'], ['==', 'meta', 'feature'], ['==', 'active', 'true']],
+                'paint': { 'circle-radius': 10, 'circle-color': '#ffff00', 'circle-stroke-width': 2, 'circle-stroke-color': '#000' }
+            },
+            // ★名前ラベル表示
+            {
+                'id': 'points-labels',
+                'type': 'symbol',
+                'filter': ['all', ['==', '$type', 'Point'], ['==', 'meta', 'feature']],
+                'layout': {
+                    'text-field': ['get', 'name'],
+                    'text-font': ['Open Sans Regular'],
+                    'text-size': 14,
+                    'text-anchor': 'top',
+                    'text-offset': [0, 1.3]
+                },
+                'paint': {
+                    'text-color': '#000',
+                    'text-halo-color': '#fff',
+                    'text-halo-width': 2
+                }
+            },
+            // ドラッグ用の点
+            {
+                'id': 'gl-draw-point-stroke-active',
+                'type': 'circle',
+                'filter': ['all', ['==', '$type', 'Point'], ['==', 'meta', 'vertex']],
+                'paint': { 'circle-radius': 10, 'circle-color': '#f00' }
+            }
+        ]
+    });
+    map.addControl(draw);
 
-    // ★重要：背景を切り替えると描画レイヤーが隠れることがあるため、drawを前面に
-    const drawData = draw.getAll();
-    draw.deleteAll();
-    draw.add(drawData);
-};
+    // 3. データ読み込み（バックアップ & 新旧比較機能）
+    map.on('load', async () => {
+        const logDiv = document.getElementById('console-log');
+        
+        // A. まずローカルバックアップを表示（爆速表示）
+        const localDataRaw = localStorage.getItem('map_data_backup');
+        let localData = localDataRaw ? JSON.parse(localDataRaw) : null;
+        if (localData) {
+            loadToDraw(localData);
+            logDiv.innerText = "バックアップを復元";
+        }
 
-// ボタンに機能を割り当て
-document.getElementById('btn-layer-std').onclick = () => switchLayer('std');
-document.getElementById('btn-layer-pale').onclick = () => switchLayer('pale');
-document.getElementById('btn-layer-ort').onclick = () => switchLayer('ort');
-    </script>
+        // B. GitHubから最新を取得して比較
+        try {
+            const url = `https://raw.githubusercontent.com/${REPO_PATH}/main/${FILE_PATH}?t=${new Date().getTime()}`;
+            const res = await fetch(url, { cache: 'no-store' });
+            if (res.ok) {
+                const githubData = await res.json();
+                const localTime = localData?.last_updated || 0;
+                const githubTime = githubData.last_updated || 0;
+
+                if (githubTime >= localTime) {
+                    loadToDraw(githubData);
+                    localStorage.setItem('map_data_backup', JSON.stringify(githubData));
+                    logDiv.innerText = "GitHubと同期完了";
+                } else {
+                    logDiv.innerText = "GitHub反映待ち...ローカル優先";
+                }
+            }
+        } catch (err) {
+            logDiv.innerText = "オフライン表示中";
+        }
+    });
+
+    // Drawにプロパティを壊さず読み込む関数
+    function loadToDraw(data) {
+        if (!data.features) return;
+        draw.deleteAll();
+        const features = data.features.map(f => ({
+            id: f.id || `id_${Math.random().toString(36).substr(2, 9)}`,
+            type: 'Feature',
+            properties: { 
+                name: f.properties.name || "", 
+                time: f.properties.time || "" 
+            },
+            geometry: f.geometry
+        }));
+        draw.add({ type: 'FeatureCollection', features: features });
+    }
+
+    // 4. 地点追加ロジック
+    let isAddMode = false;
+    const addBtn = document.getElementById('btn-add-point');
+    addBtn.onclick = () => {
+        isAddMode = !isAddMode;
+        addBtn.style.background = isAddMode ? '#ff4500' : '#007bff';
+        addBtn.innerText = isAddMode ? '📍 地図をクリック' : '📍 地点追加: OFF';
+    };
+
+    map.on('click', (e) => {
+        if (!isAddMode) return;
+        const name = prompt("場所の名前:", "新規地点");
+        if (!name) return;
+        draw.add({
+            type: 'Feature',
+            properties: { name: name, time: new Date().toLocaleString() },
+            geometry: { type: 'Point', coordinates: [e.lngLat.lng, e.lngLat.lat] }
+        });
+        document.getElementById('console-log').innerText = `「${name}」を追加しました`;
+    });
+
+    // 5. 削除ロジック
+    document.getElementById('btn-delete').onclick = () => {
+        const selected = draw.getSelected();
+        if (selected.features.length === 0) return alert("削除する点を選択してください");
+        if (confirm("削除しますか？")) {
+            draw.delete(selected.features.map(f => f.id));
+            alert("削除しました。保存ボタンを押すと確定します。");
+        }
+    };
+
+    // 6. 保存ロジック（日時の刻印付き）
+    document.getElementById('btn-save').onclick = async () => {
+        const btn = document.getElementById('btn-save');
+        btn.innerText = "保存中...";
+        btn.disabled = true;
+
+        const data = draw.getAll();
+        data.last_updated = new Date().getTime(); // 鮮度スタンプ
+        const content = JSON.stringify(data, null, 2);
+
+        try {
+            const res = await fetch(`https://api.github.com/repos/${REPO_PATH}/contents/${FILE_PATH}`, {
+                headers: { 'Authorization': `token ${GITHUB_TOKEN}` }
+            });
+            const fileData = await res.json();
+            const updateRes = await fetch(`https://api.github.com/repos/${REPO_PATH}/contents/${FILE_PATH}`, {
+                method: 'PUT',
+                headers: { 'Authorization': `token ${GITHUB_TOKEN}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    message: "Map Update",
+                    content: btoa(unescape(encodeURIComponent(content))),
+                    sha: fileData.sha
+                })
+            });
+
+            if (updateRes.ok) {
+                localStorage.setItem('map_data_backup', content);
+                alert("保存成功！反映まで約1分かかりますが、この画面では即時反映されています。");
+            }
+        } catch (err) { alert("保存エラー: " + err.message); }
+        btn.innerText = "☁️ GitHubへ保存";
+        btn.disabled = false;
+    };
+
+    // 7. レイヤー切り替え
+    const switchLayer = (type) => {
+        const tiles = {
+            'std': 'https://cyberjapandata.gsi.go.jp/xyz/std/{z}/{x}/{y}.png',
+            'pale': 'https://cyberjapandata.gsi.go.jp/xyz/pale/{z}/{x}/{y}.png',
+            'ort': 'https://cyberjapandata.gsi.go.jp/xyz/ort/{z}/{x}/{y}.jpg'
+        };
+        map.removeLayer('gsi-layer');
+        map.removeSource('gsi-tiles');
+        map.addSource('gsi-tiles', { type: 'raster', tiles: [tiles[type]], tileSize: 256, attribution: "地理院地図" });
+        map.addLayer({ id: 'gsi-layer', type: 'raster', source: 'gsi-tiles' }, map.getStyle().layers[0].id);
+    };
+    document.getElementById('btn-layer-std').onclick = () => switchLayer('std');
+    document.getElementById('btn-layer-pale').onclick = () => switchLayer('pale');
+    document.getElementById('btn-layer-ort').onclick = () => switchLayer('ort');
+
+</script>
 </body>
 </html>
