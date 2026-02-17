@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
     <meta charset="utf-8" />
-    <title>-編集GIS</title>
+    <title>編集GIS</title>
     <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
     <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
     <link href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet" />
@@ -17,12 +17,12 @@
     </style>
 </head>
 <body>
-
 <div id="ui-panel">
-        <button id="btn-add-point">📍 地点追加: OFF</button>
-        <button id="btn-save" style="background: #28a745; color: white; border: none;">☁️ GitHubへ保存</button>
-        <div id="console-log">地図をクリックして操作</div>
-    </div>
+    <button id="btn-add-point">📍 地点追加: OFF</button>
+    <button id="btn-save" style="background: #28a745; color: white; border: none;">☁️ GitHubへ保存</button>
+    <button id="btn-delete" style="background: #dc3545; color: white; border: none;">🗑️ 選択した地点を削除</button>
+    <div id="console-log">地図をクリックして操作</div>
+</div>
     <div id="map"></div>
 
     <script>
@@ -164,7 +164,23 @@ const draw = new MapboxDraw({
 
         const REPO_PATH = 'tmiyanari/my-gsi-map'; 
         const FILE_PATH = 'mydata.geojson';
+document.getElementById('btn-delete').onclick = () => {
+    // 1. 現在選択されている（黄色くなっている）地点を取得
+    const selectedFeatures = draw.getSelected();
 
+    if (selectedFeatures.features.length > 0) {
+        if (confirm(`${selectedFeatures.features.length} 件の地点を削除しますか？`)) {
+            // 2. 地図上から削除
+            draw.delete(selectedFeatures.features.map(f => f.id));
+            
+            // 3. 削除後の状態でGitHubに保存
+            // ※先ほど作った「保存ボタン」の処理を自動で呼び出すと楽です
+            alert("削除しました。変更を確定させるために『GitHubへ保存』を押してください。");
+        }
+    } else {
+        alert("削除したい地点をまずクリックして選択（黄色に）してください。");
+    }
+};
         document.getElementById('btn-save').onclick = async () => {
             const btn = document.getElementById('btn-save');
             const originalText = btn.innerText;
