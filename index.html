@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
     <meta charset="utf-8" />
-    <title>編集GIS</title>
+    <title>＋編集GIS</title>
     <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
     <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
     <link href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet" />
@@ -200,7 +200,7 @@ document.getElementById('btn-delete').onclick = () => {
 const rawData = draw.getAll();
 rawData.last_updated = new Date().getTime(); // ★これを追加
 const content = JSON.stringify(rawData, null, 2);
-            const content = JSON.stringify(draw.getAll(), null, 2);
+            
             const message = "地図データを更新: " + new Date().toLocaleString();
 
             try {
