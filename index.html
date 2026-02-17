@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
     <meta charset="utf-8" />
-    <title>名前編集てすマイマップ</title>
+    <title>名前編集てマイマップ</title>
     <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
     <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
     <link href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet" />
@@ -171,19 +171,46 @@ map.on('click', (e) => {
     });
 
     // 名前編集関数（座標を使って確実に特定する版）
-    window.editName = (id, lng, lat) => {
-        // IDで検索するか、座標が一致するものを探す
-        let feature = draw.get(id);
-        
-        // もしIDで見つからない場合は座標で検索（MapLibreとDrawの同期ズレ対策）
-        if (!feature) {
-            const all = draw.getAll().features;
-            feature = all.find(f => 
-                Math.abs(f.geometry.coordinates[0] - lng) < 0.00001 && 
-                Math.abs(f.geometry.coordinates[1] - lat) < 0.00001
-            );
-        }
+   // 名前編集関数（座標とIDのダブルチェック版）
+window.editName = (id, lng, lat) => {
+    // 1. まずはIDで探してみる
+    let feature = draw.get(id);
+    
+    // 2. IDで見つからない場合、クリックされた座標の近くにある地点を探す
+    if (!feature) {
+        const allFeatures = draw.getAll().features;
+        feature = allFeatures.find(f => {
+            const coords = f.geometry.coordinates;
+            // 座標が非常に近い（誤差 0.0001度以内）ものを特定
+            return Math.abs(coords[0] - lng) < 0.0001 && 
+                   Math.abs(coords[1] - lat) < 0.0001;
+        });
+    }
 
+    // ★ ここで feature が見つからなかった場合のガードを入れる（エラー防止）
+    if (!feature) {
+        alert("地点を特定できませんでした。もう一度クリックし直してください。");
+        return;
+    }
+
+    // 3. 編集処理
+    const oldName = feature.properties.name || "";
+    const newName = prompt("新しい名前を入力してください:", oldName);
+    
+    if (newName !== null && newName !== "") {
+        // Draw側のデータを更新（feature.id を使用）
+        draw.setFeatureProperty(feature.id, 'name', newName);
+        
+        // 看板（ラベル）を更新
+        if (typeof refreshLabels === 'function') refreshLabels();
+        
+        // ポップアップ内の表示も書き換え
+        const nameEl = document.getElementById('popup-name');
+        if (nameEl) nameEl.innerText = newName;
+        
+        document.getElementById('status').innerText = "名前を更新しました";
+    }
+};
         if (!feature) return alert("編集対象が見つかりませんでした");
 
         const oldName = feature.properties.name || "";
