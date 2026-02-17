@@ -2,102 +2,67 @@
 <html lang="ja">
 <head>
     <meta charset="utf-8" />
-    <title>draw マイ地理院地図</title>
+    <title>編集できる地理院地図</title>
     <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
     <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
     <link href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet" />
     <script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-draw/v1.4.3/mapbox-gl-draw.js"></script>
-    <link rel="stylesheet" href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-draw/v1.4.3/mapbox-gl-draw.css" type="text/css" />
+    <link rel="stylesheet" href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-draw/v1.4.3/mapbox-gl-draw.css" />
     <style>
         body { margin: 0; padding: 0; }
         #map { position: absolute; top: 0; bottom: 0; width: 100%; }
+        #console-log { position: absolute; bottom: 30px; left: 10px; background: white; padding: 10px; max-width: 300px; max-height: 100px; overflow: auto; border: 2px solid #FF4500; z-index: 10; }
     </style>
 </head>
 <body>
     <div id="map"></div>
+    <div id="console-log">ここに座標が出ます</div>
+
     <script>
-       const map = new maplibregl.Map({
-    container: 'map',
-    style: {
-        version: 8,
-        sources: {
-            // 地理院地図のタイルソースを定義
-            'gsi-tiles': {
-                type: 'raster',
-                tiles: ['https://cyberjapandata.gsi.go.jp/xyz/pale/{z}/{x}/{y}.png'],
-                tileSize: 256,
-                attribution: "海域部は海上保安庁海洋情報部の資料を使用して作成"
-            }
-        },
-        layers: [
-            {
-                id: 'gsi-layer',
-                type: 'raster',
-                source: 'gsi-tiles',
-                minzoom: 0,
-                maxzoom: 18
-            }
-        ]
-    },
-    center: [139.767, 35.681],
-    zoom: 12
-});
+        const map = new maplibregl.Map({
+            container: 'map',
+            style: {
+                version: 8,
+                sources: {
+                    'gsi-tiles': {
+                        type: 'raster',
+                        tiles: ['https://cyberjapandata.gsi.go.jp/xyz/std/{z}/{x}/{y}.png'],
+                        tileSize: 256,
+                        attribution: "地理院地図"
+                    }
+                },
+                layers: [{ id: 'gsi-layer', type: 'raster', source: 'gsi-tiles' }]
+            },
+            center: [139.767, 35.681],
+            zoom: 12
+        });
 
-// データ（丸）の読み込みは先ほどと同じ
-map.on('load', () => {
-    map.addSource('my-cloud-data', {
-        type: 'geojson',
-        data: './mydata.geojson' 
-    });
-    map.addLayer({
-        id: 'points',
-        type: 'circle',
-        source: 'my-cloud-data',
-        paint: {
-            'circle-radius': 10,
-            'circle-color': '#FF4500',
-            'circle-stroke-width': 2,
-            'circle-stroke-color': '#ffffff'
+        // 描画ツールの設定
+        const draw = new MapboxDraw({
+            displayControlsDefault: true, // 全てのボタン（点・線・面）を表示
+            controls: {
+                point: true,
+                line_string: true,
+                polygon: true,
+                trash: true
+            }
+        });
+        map.addControl(draw, 'top-left');
+
+        // 地図上にログを表示する関数
+        function updateDisplay() {
+            const data = draw.getAll();
+            const logDiv = document.getElementById('console-log');
+            if (data.features.length > 0) {
+                logDiv.innerText = JSON.stringify(data.features[data.features.length - 1].geometry.coordinates);
+                console.log("全データ:", JSON.stringify(data));
+            }
         }
-    });
-});
-        // ピンをクリックした時の処理
-map.on('click', 'points', (e) => {
-    // クリックされた地点の座標とプロパティを取得
-    const coordinates = e.features[0].geometry.coordinates.slice();
-    const name = e.features[0].properties.name;
 
-    // ポップアップを表示
-    new maplibregl.Popup()
-        .setLngLat(coordinates)
-        .setHTML(`<strong>地点名:</strong> ${name}`) // HTMLで中身を書ける
-        .addTo(map);
-});
-
-// マウスが乗った時にカーソルを指の形にする（おもてなし）
-map.on('mouseenter', 'points', () => {
-    map.getCanvas().style.cursor = 'pointer';
-});
-map.on('mouseleave', 'points', () => {
-    map.getCanvas().style.cursor = '';
-});
-const draw = new MapboxDraw({
-    displayControlsDefault: false,
-    controls: {
-        point: true, // 点を追加するボタン
-        trash: true  // 消去するボタン
-    }
-});
-map.addControl(draw);
-
-// 描画したデータをコンソールに出力する（保存の準備）
-map.on('draw.create', updateJSON);
-map.on('draw.update', updateJSON);
-
-function updateJSON() {
-    const data = draw.getAll();
-    console.log(JSON.stringify(data)); // これをGitHubに送れば「保存」になる
-}
+        // イベント登録（作成・更新・削除時に発火）
+        map.on('draw.create', updateDisplay);
+        map.on('draw.update', updateDisplay);
+        map.on('draw.delete', updateDisplay);
     </script>
 </body>
 </html>
