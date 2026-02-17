@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
     <meta charset="utf-8" />
-    <title>編集GIS!</title>
+    <title>--編集GIS!</title>
     <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
     <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
     <link href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet" />
@@ -70,35 +70,26 @@
 const draw = new MapboxDraw({
     displayControlsDefault: false,
     styles: [
-        // 1. 静止状態 (static): 選択されていない点
+        // 1. 通常状態（オレンジ）
         {
             'id': 'points-static',
             'type': 'circle',
-            'filter': ['all', 
-                ['==', '$type', 'Point'], 
-                ['==', 'meta', 'feature'], // 地図上の要素であること
-                ['==', 'active', 'false']  // 選択されていないこと
-            ],
-            'paint': {
-                'circle-radius': 10,
-                'circle-color': '#000000' // オレンジ
-            }
+            'filter': ['all', ['==', '$type', 'Point'], ['==', 'meta', 'feature'], ['==', 'active', 'false']],
+            'paint': { 'circle-radius': 10, 'circle-color': '#ff4500' }
         },
-        // 2. アクティブ状態 (active): クリックして選択した点
+        // 2. 選択状態（黄色）
         {
             'id': 'points-active',
             'type': 'circle',
-            'filter': ['all', 
-                ['==', '$type', 'Point'], 
-                ['==', 'meta', 'feature'], 
-                ['==', 'active', 'true']   // 選択されていること
-            ],
-            'paint': {
-                'circle-radius': 12,       // 少し大きく
-                'circle-color': '#ff0000', // 黄色
-                'circle-stroke-width': 2,
-                'circle-stroke-color': '#000'
-            }
+            'filter': ['all', ['==', '$type', 'Point'], ['==', 'meta', 'feature'], ['==', 'active', 'true']],
+            'paint': { 'circle-radius': 12, 'circle-color': '#ffff00', 'circle-stroke-width': 2, 'circle-stroke-color': '#000' }
+        },
+        // 3. ★移動中・ドラッグ操作を有効にするための設定
+        {
+            'id': 'points-drag',
+            'type': 'circle',
+            'filter': ['all', ['==', '$type', 'Point'], ['==', 'meta', 'vertex']], 
+            'paint': { 'circle-radius': 12, 'circle-color': '#f00' } // ドラッグの基点を赤く表示
         }
     ]
 });
