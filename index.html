@@ -16,6 +16,26 @@
     <script>
         // 2. 地図の初期化
         const map = new maplibregl.Map({ // ここが maplibregl に修正されています
+            map.on('load', () => {
+    // 1. クラウド上のGeoJSONファイルをソースとして登録
+    map.addSource('my-cloud-data', {
+        type: 'geojson',
+        data: './mydata.geojson' 
+    });
+
+    // 2. そのデータを「赤い丸」として表示する設定
+    map.addLayer({
+        id: 'points',
+        type: 'circle',
+        source: 'my-cloud-data',
+        paint: {
+            'circle-radius': 10,
+            'circle-color': '#FF0000',
+            'circle-stroke-width': 2,
+            'circle-stroke-color': '#ffffff'
+        }
+    });
+});
             container: 'map',
             style: 'https://tile.openstreetmap.jp/styles/osm-bright-ja/style.json',
             center: [139.767, 35.681],
