@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
     <meta charset="utf-8" />
-    <title>new編集GIS</title>
+    <title>ne編集GIS</title>
     <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
     <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
     <link href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet" />
@@ -18,8 +18,9 @@
 </head>
 <body>
 
-    <div id="ui-panel">
+<div id="ui-panel">
         <button id="btn-add-point">📍 地点追加: OFF</button>
+        <button id="btn-save" style="background: #28a745; color: white; border: none;">☁️ GitHubへ保存</button>
         <div id="console-log">地図をクリックして操作</div>
     </div>
     <div id="map"></div>
@@ -111,47 +112,57 @@
             
         });
         const GITHUB_TOKEN = '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';
-const REPO_PATH = 'tmiyanari/tmiyanari.github.io'; // ユーザー名/リポジトリ名
-const FILE_PATH = 'mydata.geojson';
 
-document.getElementById('btn-save').onclick = async () => {
-    const btn = document.getElementById('btn-save');
-    btn.innerText = "保存中...";
-    
-    const content = JSON.stringify(draw.getAll(), null, 2);
-    const message = "地図データを更新: " + new Date().toLocaleString();
+        const REPO_PATH = 'tmiyanari/tmiyanari.github.io'; 
+        const FILE_PATH = 'mydata.geojson';
 
-    try {
-        // 1. 現在のファイルの情報を取得（SHAというIDが必要なため）
-        const res = await fetch(`https://api.github.com/repos/${REPO_PATH}/contents/${FILE_PATH}`, {
-            headers: { 'Authorization': `token ${GITHUB_TOKEN}` }
-        });
-        const fileData = await res.json();
+        document.getElementById('btn-save').onclick = async () => {
+            const btn = document.getElementById('btn-save');
+            const originalText = btn.innerText;
+            btn.innerText = "保存中...";
+            btn.disabled = true; // 二重押し防止
+            
+            const content = JSON.stringify(draw.getAll(), null, 2);
+            const message = "地図データを更新: " + new Date().toLocaleString();
 
-        // 2. 上書きアップロード
-        const updateRes = await fetch(`https://api.github.com/repos/${REPO_PATH}/contents/${FILE_PATH}`, {
-            method: 'PUT',
-            headers: {
-                'Authorization': `token ${GITHUB_TOKEN}`,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                message: message,
-                content: btoa(unescape(encodeURIComponent(content))), // 文字化け対策のエンコード
-                sha: fileData.sha // これがないと上書きできない
-            })
-        });
+            try {
+                // 1. 現在のファイルの情報を取得（SHA取得）
+                const res = await fetch(`https://api.github.com/repos/${REPO_PATH}/contents/${FILE_PATH}`, {
+                    headers: { 'Authorization': `token ${GITHUB_TOKEN}` }
+                });
+                
+                if (!res.ok) throw new Error("ファイルが見つかりません。先にGitHub上に mydata.geojson を作成してください。");
+                
+                const fileData = await res.json();
 
-        if (updateRes.ok) {
-            alert("クラウドへの保存に成功しました！");
-            btn.innerText = "☁️ GitHubへ保存";
-        } else {
-            throw new Error();
-        }
-    } catch (err) {
-        alert("保存に失敗しました。トークンや設定を確認してください。");
-        btn.innerText = "再試行";
-    }
+                // 2. 上書きアップロード
+                const updateRes = await fetch(`https://api.github.com/repos/${REPO_PATH}/contents/${FILE_PATH}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `token ${GITHUB_TOKEN}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        message: message,
+                        content: btoa(unescape(encodeURIComponent(content))), 
+                        sha: fileData.sha 
+                    })
+                });
+
+                if (updateRes.ok) {
+                    alert("クラウドへの保存に成功しました！");
+                } else {
+                    const errorInfo = await updateRes.json();
+                    console.error(errorInfo);
+                    throw new Error("保存に失敗しました。");
+                }
+            } catch (err) {
+                alert(err.message);
+            } finally {
+                btn.innerText = originalText;
+                btn.disabled = false;
+            }
+        };
 };
     </script>
 </body>
