@@ -46,28 +46,24 @@
         });
       map.on('load', async () => {
     try {
-        const timestamp = new Date().getTime();
-        const url = `https://raw.githubusercontent.com/tmiyanari/my-gsi-map/main/mydata.geojson?t=${timestamp}`;
+        // キャッシュを完全に無視するための設定を追加
+        const url = `https://raw.githubusercontent.com/tmiyanari/my-gsi-map/main/mydata.geojson?t=${new Date().getTime()}`;
 
-        const res = await fetch(url);
-        if (!res.ok) throw new Error("データの読み込みに失敗しました");
+        const res = await fetch(url, {
+            cache: 'no-store' // ブラウザに「保存されたデータを使うな」と命令
+        });
+        
+        if (!res.ok) throw new Error("読み込み失敗");
 
         const data = await res.json();
 
-        // --- ここから修正 ---
-        if (data.features && data.features.length > 0) {
-            // 1. 今ある描画データを一旦全部消す（重複防止）
-            draw.deleteAll();
-            
-            // 2. GitHubから取得した全データを追加
-            draw.add(data);
-            
-            console.log(`${data.features.length} 件の地点をすべて読み込みました`);
+        if (data.features) {
+            draw.deleteAll(); // 一旦空にする
+            draw.add(data);   // 最新データを全部入れる
+            console.log("読み込み成功！件数:", data.features.length);
         }
-        // --- ここまで修正 ---
-        
     } catch (err) {
-        console.error("読み込みエラー:", err);
+        console.error("エラー:", err);
     }
 });
         // 2. 描画ツール初期化
