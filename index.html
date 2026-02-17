@@ -78,7 +78,7 @@
             'filter': ['all', ['==', '$type', 'Point'], ['==', 'mode', 'static']],
             'paint': {
                 'circle-radius': 10, // ★ここで大きさを指定（標準は5くらい）
-                'circle-color': '#ff0000' // ★点の色
+                'circle-color': '#000000' // ★点の色
             }
         },
         // 2. 点（アクティブ/編集中）の見た目
@@ -88,7 +88,7 @@
             'filter': ['all', ['==', '$type', 'Point'], ['!=', 'mode', 'static']],
             'paint': {
                 'circle-radius': 12, // ★編集中はさらに少し大きく
-                'circle-color': '#ffff00'
+                'circle-color': '#ff0000'
             }
         }
     ]
