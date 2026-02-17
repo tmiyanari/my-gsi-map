@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
     <meta charset="utf-8" />
-    <title>？！編集GIS</title>
+    <title>！？？編集GIS</title>
     <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
     <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
     <link href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet" />
@@ -27,7 +27,24 @@
 
     <script>
         // 1. 地図初期化
-map.on('load', async () => {
+        const map = new maplibregl.Map({
+            container: 'map',
+            style: {
+                version: 8,
+                sources: {
+                    'gsi-tiles': {
+                        type: 'raster',
+                        tiles: ['https://cyberjapandata.gsi.go.jp/xyz/std/{z}/{x}/{y}.png'],
+                        tileSize: 256,
+                        attribution: "地理院地図"
+                    }
+                },
+                layers: [{ id: 'gsi-layer', type: 'raster', source: 'gsi-tiles' }]
+            },
+            center: [139.767, 35.681],
+            zoom: 12
+        });
+      map.on('load', async () => {
     try {
         const timestamp = new Date().getTime();
         const url = `https://raw.githubusercontent.com/tmiyanari/my-gsi-map/main/mydata.geojson?t=${timestamp}`;
@@ -53,6 +70,7 @@ map.on('load', async () => {
         console.error("読み込みエラー:", err);
     }
 });
+});
 
         // 2. 描画ツール初期化
         const draw = new MapboxDraw({
@@ -76,7 +94,7 @@ map.on('load', async () => {
             'filter': ['all', ['==', '$type', 'Point'], ['!=', 'mode', 'static']],
             'paint': {
                 'circle-radius': 12, // ★編集中はさらに少し大きく
-                'circle-color': '#ff0000'
+                'circle-color': '#ffff00'
             }
         }
     ]
