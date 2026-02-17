@@ -75,7 +75,22 @@
         ],
         "type": "Point"
       }
+    },
+    {
+      "id": "9ea20ba4bd36e1d4f7a2d090efbad37d",
+      "type": "Feature",
+      "properties": {
+        "name": "ICHIGAYA",
+        "time": "16:14:50"
+      },
+      "geometry": {
+        "coordinates": [
+          139.73594452848772,
+          35.69143238621356
+        ],
+        "type": "Point"
+      }
     }
   ],
-  "last_updated": 1771312262813
+  "last_updated": 1771312492301
 }
