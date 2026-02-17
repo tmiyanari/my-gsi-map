@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
     <meta charset="utf-8" />
-    <title>名前表示編集GIS</title>
+    <title>!名前表示編集GIS</title>
     <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
     <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
     <link href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet" />
@@ -110,13 +110,14 @@ const draw = new MapboxDraw({
     'id': 'points-labels',
     'type': 'symbol',
     'filter': ['all', ['==', '$type', 'Point'], ['==', 'meta', 'feature']],
-    'layout': {
-        'text-field': ['coalesce', ['get', 'name'], '名称未設定'], // 名前がなければ「名称未設定」と出す
-        'text-font': ['Open Sans Regular', 'Arial Unicode MS Regular'], // フォントを明示
-        'text-size': 14,
-        'text-anchor': 'top',
-        'text-offset': [0, 1.2]
-    },
+'layout': {
+    // ['get', 'name'] でダメな場合、['get', 'user_name'] を試す
+    'text-field': ['coalesce', ['get', 'user_name'], ['get', 'name'], ''],
+    'text-font': ['Open Sans Regular'],
+    'text-size': 13,
+    'text-anchor': 'top',
+    'text-offset': [0, 1.2]
+},
     'paint': {
         'text-color': '#000000',
         'text-halo-color': '#ffffff',
