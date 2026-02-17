@@ -47,17 +47,29 @@
             zoom: 12
         });
 
-        // 描画ツールの設定
-        const draw = new MapboxDraw({
-            displayControlsDefault: true, // 全てのボタン（点・線・面）を表示
-            controls: {
-                point: true,
-                line_string: true,
-                polygon: true,
-                trash: true
-            }
-        });
-        map.addControl(draw, 'top-left');
+        // 1. 描画ツールの初期化（少し設定を厳しめに）
+const draw = new MapboxDraw({
+    displayControlsDefault: false,
+    controls: {
+        point: true,
+        trash: true
+    },
+    // これを追加：描画中に地図を動かしても描画を継続
+    touchEnabled: false 
+});
+map.addControl(draw, 'top-left');
+
+// 2. 【重要】地図クリック時の伝播を確認
+map.on('click', (e) => {
+    // コンソールに座標が出るか確認
+    console.log("地図がクリックされました:", e.lngLat);
+    
+    // 描画モードが「点を打つモード」なら、強制的に点を追加する処理（デバッグ用）
+    const mode = draw.getMode();
+    if (mode === 'draw_point') {
+        console.log("現在、点打ちモードです");
+    }
+});
 
         // 地図上にログを表示する関数
         function updateDisplay() {
