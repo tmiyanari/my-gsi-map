@@ -2,32 +2,44 @@
 <html lang="ja">
 <head>
     <meta charset="utf-8" />
-    <title>マイマップ - 最終安定版</title>
+    <title>マイマップ - 完成版</title>
     <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
     <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
     <link href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet" />
     <script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-draw/v1.4.3/mapbox-gl-draw.js"></script>
     <link rel="stylesheet" href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-draw/v1.4.3/mapbox-gl-draw.css" />
     <style>
-        body { margin: 0; padding: 0; }
+        body { margin: 0; padding: 0; font-family: sans-serif; }
         #map { position: absolute; top: 0; bottom: 0; width: 100%; }
-        #ui { position: absolute; top: 10px; left: 10px; z-index: 10; display: flex; flex-direction: column; gap: 5px; width: 180px; }
-        button { padding: 8px; cursor: pointer; font-weight: bold; background: white; border: 1px solid #ccc; border-radius: 4px; }
-        #status { background: rgba(255,255,255,0.8); padding: 5px; font-size: 11px; border-radius: 4px; }
+        #ui { position: absolute; top: 10px; left: 10px; z-index: 10; display: flex; flex-direction: column; gap: 8px; width: 200px; }
+        .group { background: rgba(255,255,255,0.9); padding: 8px; border-radius: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.2); display: flex; flex-direction: column; gap: 5px; }
+        button { padding: 10px; cursor: pointer; border: 1px solid #ccc; border-radius: 4px; font-weight: bold; background: white; }
+        .layer-btns { display: flex; gap: 2px; }
+        .layer-btns button { flex: 1; padding: 5px; font-size: 11px; }
+        #status { font-size: 11px; color: #555; text-align: center; }
     </style>
 </head>
 <body>
 
 <div id="ui">
-    <button id="btn-add" style="background:#007bff; color:white;">📍 地点追加: OFF</button>
-    <button id="btn-save" style="background:#28a745; color:white;">☁️ 保存</button>
-    <button id="btn-del" style="background:#dc3545; color:white;">🗑️ 削除</button>
-    <div id="status">ロード中...</div>
+    <div class="group">
+        <div class="layer-btns">
+            <button id="btn-std">標準</button>
+            <button id="btn-pale">淡色</button>
+            <button id="btn-ort">写真</button>
+        </div>
+    </div>
+    <div class="group">
+        <button id="btn-add" style="background:#007bff; color:white; border:none;">📍 地点追加: OFF</button>
+        <button id="btn-del" style="background:#dc3545; color:white; border:none;">🗑️ 選択削除</button>
+        <button id="btn-save" style="background:#28a745; color:white; border:none;">☁️ GitHub保存</button>
+        <div id="status">準備中...</div>
+    </div>
 </div>
 <div id="map"></div>
 
 <script>
-    // --- 1. 設定 (ここはあなたの情報に書き換えてください) ---
+    // --- 1. 設定 ---
     const GITHUB_TOKEN = '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'; 
     const REPO_PATH = 'tmiyanari/my-gsi-map';
     const FILE_PATH = 'mydata.geojson';
@@ -45,75 +57,95 @@
         zoom: 12
     });
 
-    // --- 3. 描画ツール設定 ---
+    // --- 3. 描画ツール (名前表示付き) ---
     const draw = new MapboxDraw({
         displayControlsDefault: false,
         styles: [
-            { 'id': 'pts-off', 'type': 'circle', 'filter': ['all', ['==', '$type', 'Point'], ['==', 'active', 'false']], 'paint': { 'circle-radius': 8, 'circle-color': '#ff4500' } },
-            { 'id': 'pts-on', 'type': 'circle', 'filter': ['all', ['==', '$type', 'Point'], ['==', 'active', 'true']], 'paint': { 'circle-radius': 10, 'circle-color': '#ffff00' } },
-            { 'id': 'lbls', 'type': 'symbol', 'filter': ['all', ['==', '$type', 'Point']], 
-              'layout': { 'text-field': '{name}', 'text-font': ['Open Sans Regular'], 'text-size': 14, 'text-offset': [0, 1.2], 'text-anchor': 'top' },
+            { 'id': 'pts-off', 'type': 'circle', 'filter': ['all', ['==', '$type', 'Point'], ['==', 'meta', 'feature'], ['==', 'active', 'false']], 'paint': { 'circle-radius': 8, 'circle-color': '#ff4500', 'circle-stroke-width': 2, 'circle-stroke-color': '#fff' } },
+            { 'id': 'pts-on', 'type': 'circle', 'filter': ['all', ['==', '$type', 'Point'], ['==', 'meta', 'feature'], ['==', 'active', 'true']], 'paint': { 'circle-radius': 10, 'circle-color': '#ffff00', 'circle-stroke-width': 2, 'circle-stroke-color': '#000' } },
+            { 'id': 'lbls', 'type': 'symbol', 'filter': ['all', ['==', '$type', 'Point'], ['==', 'meta', 'feature']], 
+              'layout': { 'text-field': '{name}', 'text-font': ['Open Sans Regular'], 'text-size': 14, 'text-offset': [0, 1.3], 'text-anchor': 'top' },
               'paint': { 'text-color': '#000', 'text-halo-color': '#fff', 'text-halo-width': 2 }
             }
         ]
     });
     map.addControl(draw);
 
-    // --- 4. データ処理 ---
-    const loadData = (data) => {
+    // データ読み込み関数
+    const loadToMap = (data) => {
         if (!data || !data.features) return;
         draw.deleteAll();
         data.features.forEach(f => {
             const id = draw.add(f)[0];
-            // 明示的に名前をセット（これが表示の鍵）
             draw.setFeatureProperty(id, 'name', f.properties.name || "無題");
         });
     };
 
+    // --- 4. 起動時処理 (ラグ対策・巻き戻り防止) ---
     map.on('load', async () => {
+        const log = document.getElementById('status');
         const local = localStorage.getItem('map_backup');
-        if (local) { loadData(JSON.parse(local)); document.getElementById('status').innerText = "バックアップ復元完了"; }
+        let localData = local ? JSON.parse(local) : null;
+        
+        if (localData) {
+            loadToMap(localData);
+            log.innerText = "バックアップ復元済み";
+        }
 
         try {
             const res = await fetch(`https://raw.githubusercontent.com/${REPO_PATH}/main/${FILE_PATH}?t=${Date.now()}`);
             if (res.ok) {
-                const json = await res.json();
-                loadData(json);
-                localStorage.setItem('map_backup', JSON.stringify(json));
-                document.getElementById('status').innerText = "GitHub同期完了";
+                const gitData = await res.json();
+                const localTime = localData?.last_updated || 0;
+                const gitTime = gitData.last_updated || 0;
+
+                if (gitTime >= localTime) {
+                    loadToMap(gitData);
+                    localStorage.setItem('map_backup', JSON.stringify(gitData));
+                    log.innerText = "最新データを同期";
+                } else {
+                    log.innerText = "GitHub反映待ち(ローカル優先)";
+                }
             }
-        } catch (e) { document.getElementById('status').innerText = "同期失敗(オフライン)"; }
+        } catch (e) { log.innerText = "オフライン"; }
     });
 
-    // --- 5. 操作 ---
-    let mode = false;
+    // --- 5. 地図追加・ポップアップ ---
+    let addMode = false;
     document.getElementById('btn-add').onclick = () => {
-        mode = !mode;
-        document.getElementById('btn-add').innerText = mode ? "📍 地図をクリック" : "📍 地点追加: OFF";
-        document.getElementById('btn-add').style.background = mode ? "#ff4500" : "#007bff";
+        addMode = !addMode;
+        const btn = document.getElementById('btn-add');
+        btn.innerText = addMode ? "📍 地図をクリック" : "📍 地点追加: OFF";
+        btn.style.background = addMode ? "#ff4500" : "#007bff";
     };
 
     map.on('click', (e) => {
-        if (!mode) {
-            const f = map.queryRenderedFeatures(e.point).filter(x => x.properties.name)[0];
-            if (f) new maplibregl.Popup().setLngLat(e.lngLat).setHTML(`<b>${f.properties.name}</b>`).addTo(map);
-            return;
+        if (addMode) {
+            const name = prompt("場所の名前:");
+            if (!name) return;
+            const id = draw.add({ type: 'Feature', properties: { name: name }, geometry: { type: 'Point', coordinates: [e.lngLat.lng, e.lngLat.lat] } })[0];
+            draw.setFeatureProperty(id, 'name', name);
+        } else {
+            const fs = map.queryRenderedFeatures(e.point).filter(f => f.properties.name);
+            if (fs.length) {
+                new maplibregl.Popup().setLngLat(e.lngLat).setHTML(`<b>${fs[0].properties.name}</b>`).addTo(map);
+            }
         }
-        const n = prompt("名前を入力:");
-        if (!n) return;
-        const id = draw.add({ type: 'Feature', properties: { name: n }, geometry: { type: 'Point', coordinates: [e.lngLat.lng, e.lngLat.lat] } })[0];
-        draw.setFeatureProperty(id, 'name', n);
     });
 
     document.getElementById('btn-del').onclick = () => {
-        const sel = draw.getSelectedIds();
-        if (sel.length) draw.delete(sel);
+        const ids = draw.getSelectedIds();
+        if (ids.length && confirm("削除しますか？")) draw.delete(ids);
     };
 
+    // --- 6. 保存 (巻き戻り防止スタンプ) ---
     document.getElementById('btn-save').onclick = async () => {
         const btn = document.getElementById('btn-save');
         btn.innerText = "保存中...";
-        const content = JSON.stringify(draw.getAll());
+        const data = draw.getAll();
+        data.last_updated = Date.now(); // ここで時間を刻印！
+        const content = JSON.stringify(data);
+
         try {
             const res = await fetch(`https://api.github.com/repos/${REPO_PATH}/contents/${FILE_PATH}`, { headers: { 'Authorization': `token ${GITHUB_TOKEN}` } });
             const info = await res.json();
@@ -122,10 +154,26 @@
                 headers: { 'Authorization': `token ${GITHUB_TOKEN}` },
                 body: JSON.stringify({ message: "update", content: btoa(unescape(encodeURIComponent(content))), sha: info.sha })
             });
-            if (put.ok) { localStorage.setItem('map_backup', content); alert("成功！"); }
-        } catch (e) { alert("エラー"); }
-        btn.innerText = "☁️ 保存";
+            if (put.ok) {
+                localStorage.setItem('map_backup', content);
+                alert("保存完了！もう巻き戻りません。");
+            }
+        } catch (e) { alert("保存失敗"); }
+        btn.innerText = "☁️ GitHub保存";
     };
+
+    // --- 7. 地図切り替え再実装 ---
+    const switchLayer = (t) => {
+        const urls = { 'std': 'std/{z}/{x}/{y}.png', 'pale': 'pale/{z}/{x}/{y}.png', 'ort': 'ort/{z}/{x}/{y}.jpg' };
+        map.removeLayer('gsi-layer');
+        map.removeSource('gsi');
+        map.addSource('gsi', { type: 'raster', tiles: [`https://cyberjapandata.gsi.go.jp/xyz/${urls[t]}`], tileSize: 256, attribution: "地理院地図" });
+        map.addLayer({ id: 'gsi-layer', type: 'raster', source: 'gsi' }, map.getStyle().layers[0].id);
+    };
+    document.getElementById('btn-std').onclick = () => switchLayer('std');
+    document.getElementById('btn-pale').onclick = () => switchLayer('pale');
+    document.getElementById('btn-ort').onclick = () => switchLayer('ort');
+
 </script>
 </body>
 </html>
