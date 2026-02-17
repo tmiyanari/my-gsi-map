@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
     <meta charset="utf-8" />
-    <title>-編集GIS</title>
+    <title>編集GIS</title>
     <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
     <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
     <link href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet" />
@@ -44,6 +44,14 @@
             center: [139.767, 35.681],
             zoom: 12
         });
+        map.on('load', async () => {
+    // GitHub上の最新データを読み込んで表示する
+    const res = await fetch(`https://tmiyanari.github.io/my-gsi-map/mydata.geojson`);
+    if (res.ok) {
+        const data = await res.json();
+        draw.add(data); // 保存されていたピンを地図に復元
+    }
+});
 
         // 2. 描画ツール初期化
         const draw = new MapboxDraw({ displayControlsDefault: false });
