@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
     <meta charset="utf-8" />
-    <title>geojson test 2 マイ地理院地図</title>
+    <title>地理院地図に移行 マイ地理院地図</title>
     <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
     <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
     <link href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet" />
@@ -14,34 +14,51 @@
 <body>
     <div id="map"></div>
     <script>
-        // maplibregl (ハイフンなし) を使用
-        const map = new maplibregl.Map({
-            container: 'map',
-            // CORS回避のためOpenStreetMapのスタイルを使用
-            style: 'https://tile.openstreetmap.jp/styles/osm-bright-ja/style.json',
-            center: [139.767, 35.681],
-            zoom: 12
-        });
+       const map = new maplibregl.Map({
+    container: 'map',
+    style: {
+        version: 8,
+        sources: {
+            // 地理院地図のタイルソースを定義
+            'gsi-tiles': {
+                type: 'raster',
+                tiles: ['https://cyberjapandata.gsi.go.jp/xyz/std/{z}/{x}/{y}.png'],
+                tileSize: 256,
+                attribution: "海域部は海上保安庁海洋情報部の資料を使用して作成"
+            }
+        },
+        layers: [
+            {
+                id: 'gsi-layer',
+                type: 'raster',
+                source: 'gsi-tiles',
+                minzoom: 0,
+                maxzoom: 18
+            }
+        ]
+    },
+    center: [139.767, 35.681],
+    zoom: 12
+});
 
-        map.on('load', () => {
-            // クラウド上のmydata.geojsonを読み込む
-            map.addSource('my-cloud-data', {
-                type: 'geojson',
-                data: './mydata.geojson' 
-            });
-
-            map.addLayer({
-                id: 'points',
-                type: 'circle',
-                source: 'my-cloud-data',
-                paint: {
-                    'circle-radius': 10,
-                    'circle-color': '#FF4500', // オレンジレッド
-                    'circle-stroke-width': 2,
-                    'circle-stroke-color': '#ffffff'
-                }
-            });
-        });
+// データ（丸）の読み込みは先ほどと同じ
+map.on('load', () => {
+    map.addSource('my-cloud-data', {
+        type: 'geojson',
+        data: './mydata.geojson' 
+    });
+    map.addLayer({
+        id: 'points',
+        type: 'circle',
+        source: 'my-cloud-data',
+        paint: {
+            'circle-radius': 10,
+            'circle-color': '#FF4500',
+            'circle-stroke-width': 2,
+            'circle-stroke-color': '#ffffff'
+        }
+    });
+});
     </script>
 </body>
 </html>
