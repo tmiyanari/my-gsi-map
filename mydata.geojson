@@ -47,16 +47,16 @@
       }
     },
     {
-      "id": "a8ddf13d66ecef7745b4cbbd1814e84d",
+      "id": "ba1b4388a0e982f4f7a6d5192557b67a",
       "type": "Feature",
       "properties": {
-        "name": "皇居",
-        "time": "14:17:02"
+        "name": "うえの",
+        "time": "14:17:54"
       },
       "geometry": {
         "coordinates": [
-          139.7537820739724,
-          35.683579535164
+          139.77234077796493,
+          35.71235939291016
         ],
         "type": "Point"
       }
