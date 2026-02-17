@@ -60,7 +60,22 @@
         ],
         "type": "Point"
       }
+    },
+    {
+      "id": "9982abbf1c6627f8f58dc536d8b6b190",
+      "type": "Feature",
+      "properties": {
+        "name": "kanda",
+        "time": "16:10:59"
+      },
+      "geometry": {
+        "coordinates": [
+          139.7530258506253,
+          35.6964543063459
+        ],
+        "type": "Point"
+      }
     }
   ],
-  "last_updated": 1771312019706
+  "last_updated": 1771312262813
 }
