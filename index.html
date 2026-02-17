@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
     <meta charset="utf-8" />
-    <title>--編集GIS</title>
+    <title>-編集GIS</title>
     <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
     <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
     <link href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet" />
@@ -44,17 +44,31 @@
             center: [139.767, 35.681],
             zoom: 12
         });
-     map.on('load', async () => {
-    try {
-        // URLの末尾に「現在時刻」を混ぜることで、ブラウザに「新しい別のデータだ」と思い込ませる
-        const timestamp = new Date().getTime();
-        // リポジトリ名などはご自身のものに合わせてください
-        const url = `https://raw.githubusercontent.com/tmiyanari/my-gsi-map/main/mydata.geojson?t=${new Date().getTime()}`;
+  map.on('load', async () => {
+    // 1. まず、ブラウザが覚えている「前回の保存データ」があれば即座に表示
+    const localData = localStorage.getItem('map_data_backup');
+    if (localData) {
+        draw.add(JSON.parse(localData));
+        console.log("ローカルバックアップから復元しました");
+    }
 
-        const res = await fetch(url, {
-            mode: 'cors',
-            cache: 'no-store' // ブラウザのキャッシュ（記憶）を使わない設定
-        });
+    try {
+        // 2. その後、GitHubから最新版を取りに行く
+        const url = `https://raw.githubusercontent.com/${REPO_PATH}/main/${FILE_PATH}?t=${new Date().getTime()}`;
+        const res = await fetch(url, { cache: 'no-store' });
+
+        if (res.ok) {
+            const data = await res.json();
+            draw.deleteAll(); // バックアップを消して最新版に差し替え
+            draw.add(data);
+            // 最新版をまたバックアップに保存しておく
+            localStorage.setItem('map_data_backup', JSON.stringify(data));
+            console.log("GitHubの最新データに更新しました！");
+        }
+    } catch (err) {
+        console.error("読み込みエラー（オフラインの可能性があります）:", err);
+    }
+});
 
         if (!res.ok) throw new Error("データの取得に失敗しました");
 
@@ -214,15 +228,11 @@ document.getElementById('btn-delete').onclick = () => {
                     })
                 });
 
-                if (updateRes.ok) {
-                    alert("クラウドへの保存に成功しました！");
-                    // --- ここを追加 ---
-            // 保存に成功したら、今の状態を「最新」として内部的に保持し続ける
-            // これにより、GitHub側の反映が遅くても、次のリロードまでは手元のデータが正義になります
-            console.log("内部データを確定しました");
-            // ------------------
-            
-            btn.innerText = "☁️ GitHubへ保存";
+              if (updateRes.ok) {
+    alert("クラウドへの保存に成功しました！");
+    // 保存した瞬間のデータをブラウザにも覚えさせる（ここを追加）
+    localStorage.setItem('map_data_backup', content); 
+    btn.innerText = "☁️ GitHubへ保存";
                 } else {
                     const errorInfo = await updateRes.json();
                     console.error(errorInfo);
