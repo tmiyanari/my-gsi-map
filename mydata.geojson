@@ -30,6 +30,21 @@
         ],
         "type": "Point"
       }
+    },
+    {
+      "id": "cb59050ceb82af723e8d0f806ce05b0b",
+      "type": "Feature",
+      "properties": {
+        "name": "SRC",
+        "time": "14:15:32"
+      },
+      "geometry": {
+        "coordinates": [
+          139.75276116899175,
+          35.702657718982266
+        ],
+        "type": "Point"
+      }
     }
   ]
 }
