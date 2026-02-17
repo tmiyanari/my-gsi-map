@@ -45,7 +45,22 @@
         ],
         "type": "Point"
       }
+    },
+    {
+      "id": "d98205e5ebecf25efefe065cb110262f",
+      "type": "Feature",
+      "properties": {
+        "name": "有楽町",
+        "time": "16:06:58"
+      },
+      "geometry": {
+        "coordinates": [
+          139.7612450484262,
+          35.67594329380721
+        ],
+        "type": "Point"
+      }
     }
   ],
-  "last_updated": 1771311731478
+  "last_updated": 1771312019706
 }
