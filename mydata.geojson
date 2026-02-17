@@ -17,6 +17,21 @@
       }
     },
     {
+      "id": "d0277d74c36ddaa61fbcffc7e921785b",
+      "type": "Feature",
+      "properties": {
+        "name": "新規地点",
+        "time": "14:06:39"
+      },
+      "geometry": {
+        "coordinates": [
+          139.75394653447495,
+          35.68452039944344
+        ],
+        "type": "Point"
+      }
+    },
+    {
       "id": "cb59050ceb82af723e8d0f806ce05b0b",
       "type": "Feature",
       "properties": {
@@ -70,8 +85,8 @@
       },
       "geometry": {
         "coordinates": [
-          139.74824043895887,
-          35.67782765804725
+          139.73622414257113,
+          35.69149200177054
         ],
         "type": "Point"
       }
