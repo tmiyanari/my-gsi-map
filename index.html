@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
     <meta charset="utf-8" />
-    <title>名前表示　編集GIS</title>
+    <title>名前表示!　編集GIS</title>
     <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
     <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
     <link href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet" />
@@ -32,24 +32,25 @@
 
     <script>
         // 1. 地図初期化
-        const map = new maplibregl.Map({
-            container: 'map',
-            style: {
-                version: 8,
-                glyphs: "https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf",
-                sources: {
-                    'gsi-tiles': {
-                        type: 'raster',
-                        tiles: ['https://cyberjapandata.gsi.go.jp/xyz/std/{z}/{x}/{y}.png'],
-                        tileSize: 256,
-                        attribution: "地理院地図"
-                    }
-                },
-                layers: [{ id: 'gsi-layer', type: 'raster', source: 'gsi-tiles' }]
-            },
-            center: [139.767, 35.681],
-            zoom: 12
-        });
+const map = new maplibregl.Map({
+    container: 'map',
+    style: {
+        version: 8,
+        // フォントデータを設定（これが無いと文字が出ない）
+        glyphs: "https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf",
+        sources: {
+            'gsi-tiles': {
+                type: 'raster',
+                tiles: ['https://cyberjapandata.gsi.go.jp/xyz/std/{z}/{x}/{y}.png'],
+                tileSize: 256,
+                attribution: "地理院地図"
+            }
+        },
+        layers: [{ id: 'gsi-layer', type: 'raster', source: 'gsi-tiles' }]
+    },
+    center: [139.767, 35.681],
+    zoom: 12
+});
 // 地図読み込み時の処理
        map.on('load', async () => {
     // 1. ローカルバックアップを読み込む
@@ -271,14 +272,12 @@ const content = JSON.stringify(rawData, null, 2);
 };
         // レイヤー（背景地図）を切り替える関数
 const switchLayer = (layerType) => {
-    // 地理院地図のタイルURL定義
     const tiles = {
-        'std': 'https://cyberjapandata.gsi.go.jp/xyz/std/{z}/{x}/{y}.png',   // 標準
-        'pale': 'https://cyberjapandata.gsi.go.jp/xyz/pale/{z}/{x}/{y}.png', // 淡色
-        'ort': 'https://cyberjapandata.gsi.go.jp/xyz/ort/{z}/{x}/{y}.jpg'   // 写真
+        'std': 'https://cyberjapandata.gsi.go.jp/xyz/std/{z}/{x}/{y}.png',
+        'pale': 'https://cyberjapandata.gsi.go.jp/xyz/pale/{z}/{x}/{y}.png',
+        'ort': 'https://cyberjapandata.gsi.go.jp/xyz/ort/{z}/{x}/{y}.jpg'
     };
 
-    // 現在のソースを一度削除して、新しいタイルを読み込み直す
     if (map.getSource('gsi-tiles')) {
         map.removeLayer('gsi-layer');
         map.removeSource('gsi-tiles');
@@ -291,12 +290,17 @@ const switchLayer = (layerType) => {
         attribution: "地理院地図"
     });
 
-    // 背景として追加（描画ツールより下にくるように設定）
+    // 背景として追加
     map.addLayer({
         id: 'gsi-layer',
         type: 'raster',
         source: 'gsi-tiles'
-    }, map.getStyle().layers[0].id); // 一番下のレイヤーとして追加
+    }, map.getStyle().layers[0].id); // 一番下に追加
+
+    // ★重要：背景を切り替えると描画レイヤーが隠れることがあるため、drawを前面に
+    const drawData = draw.getAll();
+    draw.deleteAll();
+    draw.add(drawData);
 };
 
 // ボタンに機能を割り当て
