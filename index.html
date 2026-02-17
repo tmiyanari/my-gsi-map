@@ -6,6 +6,8 @@
     <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
     <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
     <link href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet" />
+    <script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-draw/v1.4.3/mapbox-gl-draw.js"></script>
+    <link rel="stylesheet" href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-draw/v1.4.3/mapbox-gl-draw.css" type="text/css" />
     <style>
         body { margin: 0; padding: 0; }
         #map { position: absolute; top: 0; bottom: 0; width: 100%; }
@@ -79,6 +81,23 @@ map.on('mouseenter', 'points', () => {
 map.on('mouseleave', 'points', () => {
     map.getCanvas().style.cursor = '';
 });
+        const draw = new MapboxDraw({
+    displayControlsDefault: false,
+    controls: {
+        point: true, // 点を追加するボタン
+        trash: true  // 消去するボタン
+    }
+});
+map.addControl(draw);
+
+// 描画したデータをコンソールに出力する（保存の準備）
+map.on('draw.create', updateJSON);
+map.on('draw.update', updateJSON);
+
+function updateJSON() {
+    const data = draw.getAll();
+    console.log(JSON.stringify(data)); // これをGitHubに送れば「保存」になる
+}
     </script>
 </body>
 </html>
