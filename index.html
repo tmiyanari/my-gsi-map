@@ -27,64 +27,47 @@
 <body>
     <div id="map"></div>
     <div id="console-log">ここに座標が出ます</div>
+<div id="controls" style="position: absolute; top: 10px; left: 50px; z-index: 100;">
+    <button id="btn-add-point" style="padding: 10px; cursor: pointer;">地点を追加（クリックしてON）</button>
+</div>
 
-    <script>
-        const map = new maplibregl.Map({
-            container: 'map',
-            style: {
-                version: 8,
-                sources: {
-                    'gsi-tiles': {
-                        type: 'raster',
-                        tiles: ['https://cyberjapandata.gsi.go.jp/xyz/std/{z}/{x}/{y}.png'],
-                        tileSize: 256,
-                        attribution: "地理院地図"
-                    }
-                },
-                layers: [{ id: 'gsi-layer', type: 'raster', source: 'gsi-tiles' }]
-            },
-            center: [139.767, 35.681],
-            zoom: 12
-        });
+<script>
+    // ...地図の初期化などはそのまま...
 
-        // 1. 描画ツールの初期化（少し設定を厳しめに）
-const draw = new MapboxDraw({
-    displayControlsDefault: false,
-    controls: {
-        point: true,
-        trash: true
-    },
-    // これを追加：描画中に地図を動かしても描画を継続
-    touchEnabled: false 
-});
-map.addControl(draw, 'top-left');
+    const draw = new MapboxDraw({
+        displayControlsDefault: false // 標準ボタンは隠す
+    });
+    map.addControl(draw);
 
-// 2. 【重要】地図クリック時の伝播を確認
-map.on('click', (e) => {
-    // コンソールに座標が出るか確認
-    console.log("地図がクリックされました:", e.lngLat);
-    
-    // 描画モードが「点を打つモード」なら、強制的に点を追加する処理（デバッグ用）
-    const mode = draw.getMode();
-    if (mode === 'draw_point') {
-        console.log("現在、点打ちモードです");
-    }
-});
+    let isAddMode = false;
+    const addBtn = document.getElementById('btn-add-point');
 
-        // 地図上にログを表示する関数
-        function updateDisplay() {
-            const data = draw.getAll();
-            const logDiv = document.getElementById('console-log');
-            if (data.features.length > 0) {
-                logDiv.innerText = JSON.stringify(data.features[data.features.length - 1].geometry.coordinates);
-                console.log("全データ:", JSON.stringify(data));
-            }
-        }
+    addBtn.onclick = () => {
+        isAddMode = !isAddMode;
+        addBtn.style.background = isAddMode ? '#ff4500' : '#fff';
+        addBtn.innerText = isAddMode ? '地図をクリックして配置' : '地点を追加';
+    };
 
-        // イベント登録（作成・更新・削除時に発火）
-        map.on('draw.create', updateDisplay);
-        map.on('draw.update', updateDisplay);
-        map.on('draw.delete', updateDisplay);
-    </script>
+    map.on('click', (e) => {
+        if (!isAddMode) return;
+
+        // 1. クリックした場所に点を生成
+        const feature = {
+            type: 'Feature',
+            properties: { name: '新規地点', time: new Date().toLocaleString() },
+            geometry: { type: 'Point', coordinates: [e.lngLat.lng, e.lngLat.lat] }
+        };
+
+        // 2. 描画ツールにデータを追加
+        draw.add(feature);
+
+        // 3. コンソールに現在の全データ（GeoJSON）を出力
+        const allData = draw.getAll();
+        console.log("現在の全データ:", JSON.stringify(allData));
+        
+        // 画面のログ表示を更新
+        document.getElementById('console-log').innerText = `追加完了: ${e.lngLat.lng.toFixed(4)}`;
+    });
+</script>
 </body>
 </html>
