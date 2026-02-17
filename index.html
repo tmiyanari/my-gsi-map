@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
     <meta charset="utf-8" />
-    <title>-編集GIS</title>
+    <title>編集GIS</title>
     <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
     <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
     <link href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet" />
@@ -44,45 +44,43 @@
             center: [139.767, 35.681],
             zoom: 12
         });
-  map.on('load', async () => {
-    // 1. まず、ブラウザが覚えている「前回の保存データ」があれば即座に表示
-    const localData = localStorage.getItem('map_data_backup');
-    if (localData) {
-        draw.add(JSON.parse(localData));
-        console.log("ローカルバックアップから復元しました");
-    }
+// 地図読み込み時の処理
+        map.on('load', async () => {
+            // 1. まず、ブラウザのバックアップから即座に表示（ラグ対策）
+            const localData = localStorage.getItem('map_data_backup');
+            if (localData) {
+                try {
+                    draw.add(JSON.parse(localData));
+                    console.log("ローカルバックアップから復元しました");
+                } catch (e) {
+                    console.error("バックアップの読み込みに失敗:", e);
+                }
+            }
 
-    try {
-        // 2. その後、GitHubから最新版を取りに行く
-        const url = `https://raw.githubusercontent.com/${REPO_PATH}/main/${FILE_PATH}?t=${new Date().getTime()}`;
-        const res = await fetch(url, { cache: 'no-store' });
+            try {
+                // 2. GitHubから最新データを強制取得
+                const timestamp = new Date().getTime();
+                const url = `https://raw.githubusercontent.com/${REPO_PATH}/main/${FILE_PATH}?t=${timestamp}`;
 
-        if (res.ok) {
-            const data = await res.json();
-            draw.deleteAll(); // バックアップを消して最新版に差し替え
-            draw.add(data);
-            // 最新版をまたバックアップに保存しておく
-            localStorage.setItem('map_data_backup', JSON.stringify(data));
-            console.log("GitHubの最新データに更新しました！");
-        }
-    } catch (err) {
-        console.error("読み込みエラー（オフラインの可能性があります）:", err);
-    }
-});
+                const res = await fetch(url, {
+                    mode: 'cors',
+                    cache: 'no-store'
+                });
 
-        if (!res.ok) throw new Error("データの取得に失敗しました");
-
-        const data = await res.json();
-
-        if (data.features) {
-            draw.deleteAll();
-            draw.add(data);
-            console.log("最新データを読み込みました！");
-        }
-    } catch (err) {
-        console.error("読み込みエラー:", err);
-    }
-});
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.features) {
+                        draw.deleteAll(); // バックアップを消して最新版に差し替え
+                        draw.add(data);
+                        // 最新版をまたバックアップに保存
+                        localStorage.setItem('map_data_backup', JSON.stringify(data));
+                        console.log("GitHubから最新データを同期しました！");
+                    }
+                }
+            } catch (err) {
+                console.error("GitHub同期エラー:", err);
+            }
+        });
         // 2. 描画ツール初期化
 const draw = new MapboxDraw({
     displayControlsDefault: false,
