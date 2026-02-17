@@ -45,6 +45,21 @@
         ],
         "type": "Point"
       }
+    },
+    {
+      "id": "a800426991a69dbc5c392edd8ebe5972",
+      "type": "Feature",
+      "properties": {
+        "name": "皇居",
+        "time": "14:16:37"
+      },
+      "geometry": {
+        "coordinates": [
+          139.75464038085227,
+          35.68302180489387
+        ],
+        "type": "Point"
+      }
     }
   ]
 }
