@@ -59,6 +59,26 @@ map.on('load', () => {
         }
     });
 });
+        // ピンをクリックした時の処理
+map.on('click', 'points', (e) => {
+    // クリックされた地点の座標とプロパティを取得
+    const coordinates = e.features[0].geometry.coordinates.slice();
+    const name = e.features[0].properties.name;
+
+    // ポップアップを表示
+    new maplibregl.Popup()
+        .setLngLat(coordinates)
+        .setHTML(`<strong>地点名:</strong> ${name}`) // HTMLで中身を書ける
+        .addTo(map);
+});
+
+// マウスが乗った時にカーソルを指の形にする（おもてなし）
+map.on('mouseenter', 'points', () => {
+    map.getCanvas().style.cursor = 'pointer';
+});
+map.on('mouseleave', 'points', () => {
+    map.getCanvas().style.cursor = '';
+});
     </script>
 </body>
 </html>
