@@ -32,21 +32,6 @@
       }
     },
     {
-      "id": "499fa35ea0fb08ae6cf35e99f7af54f5",
-      "type": "Feature",
-      "properties": {
-        "name": "新規地点",
-        "time": "14:34:57"
-      },
-      "geometry": {
-        "coordinates": [
-          139.78708438110596,
-          35.68427669250724
-        ],
-        "type": "Point"
-      }
-    },
-    {
       "id": "b979988c184285a902c4b6ba8a2f8d26",
       "type": "Feature",
       "properties": {
@@ -57,36 +42,6 @@
         "coordinates": [
           139.74824043895887,
           35.67782765804725
-        ],
-        "type": "Point"
-      }
-    },
-    {
-      "id": "b49a9602d3c2bd6853bf9c507af4fd1b",
-      "type": "Feature",
-      "properties": {
-        "name": "新規地点",
-        "time": "14:35:02"
-      },
-      "geometry": {
-        "coordinates": [
-          139.78983096313658,
-          35.70741885767923
-        ],
-        "type": "Point"
-      }
-    },
-    {
-      "id": "752ccdbfffb0b74f228478c2373ba29c",
-      "type": "Feature",
-      "properties": {
-        "name": "新規地点",
-        "time": "14:35:04"
-      },
-      "geometry": {
-        "coordinates": [
-          139.81523684692462,
-          35.68288237171811
         ],
         "type": "Point"
       }
@@ -122,31 +77,16 @@
       }
     },
     {
-      "id": "45756beb763100dd7ab162f5b2270760",
+      "id": "7d3778ecc71e49be2ad6a723776fee26",
       "type": "Feature",
       "properties": {
         "name": "１",
-        "time": "15:32:47"
+        "time": "15:34:27"
       },
       "geometry": {
         "coordinates": [
-          139.74571398925968,
-          35.731529749852584
-        ],
-        "type": "Point"
-      }
-    },
-    {
-      "id": "ed70271d0e39110a8074a232c70ed56b",
-      "type": "Feature",
-      "properties": {
-        "name": "１１",
-        "time": "15:33:11"
-      },
-      "geometry": {
-        "coordinates": [
-          139.79446582031426,
-          35.69208443860326
+          139.76405147505824,
+          35.69128775879261
         ],
         "type": "Point"
       }
