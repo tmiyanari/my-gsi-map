@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
     <meta charset="utf-8" />
-    <title>クリック マイ地理院地図</title>
+    <title>draw マイ地理院地図</title>
     <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
     <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
     <link href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet" />
@@ -81,7 +81,7 @@ map.on('mouseenter', 'points', () => {
 map.on('mouseleave', 'points', () => {
     map.getCanvas().style.cursor = '';
 });
-        const draw = new MapboxDraw({
+const draw = new MapboxDraw({
     displayControlsDefault: false,
     controls: {
         point: true, // 点を追加するボタン
