@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
     <meta charset="utf-8" />
-    <title>編集GIS</title>
+    <title>編集GIS!</title>
     <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
     <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
     <link href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet" />
@@ -67,28 +67,37 @@
     }
 });
         // 2. 描画ツール初期化
-        const draw = new MapboxDraw({
+const draw = new MapboxDraw({
     displayControlsDefault: false,
-    // スタイルのカスタマイズ
     styles: [
-        // 1. 点（確定済み）の見た目
+        // 1. 静止状態 (static): 選択されていない点
         {
-            'id': 'gl-draw-point-static',
+            'id': 'points-static',
             'type': 'circle',
-            'filter': ['all', ['==', '$type', 'Point'], ['==', 'mode', 'static']],
+            'filter': ['all', 
+                ['==', '$type', 'Point'], 
+                ['==', 'meta', 'feature'], // 地図上の要素であること
+                ['==', 'active', 'false']  // 選択されていないこと
+            ],
             'paint': {
-                'circle-radius': 10, // ★ここで大きさを指定（標準は5くらい）
-                'circle-color': '#000000' // ★点の色
+                'circle-radius': 10,
+                'circle-color': '#000000' // オレンジ
             }
         },
-        // 2. 点（アクティブ/編集中）の見た目
+        // 2. アクティブ状態 (active): クリックして選択した点
         {
-            'id': 'gl-draw-point-active',
+            'id': 'points-active',
             'type': 'circle',
-            'filter': ['all', ['==', '$type', 'Point'], ['!=', 'mode', 'static']],
+            'filter': ['all', 
+                ['==', '$type', 'Point'], 
+                ['==', 'meta', 'feature'], 
+                ['==', 'active', 'true']   // 選択されていること
+            ],
             'paint': {
-                'circle-radius': 12, // ★編集中はさらに少し大きく
-                'circle-color': '#ff0000'
+                'circle-radius': 12,       // 少し大きく
+                'circle-color': '#ff0000', // 黄色
+                'circle-stroke-width': 2,
+                'circle-stroke-color': '#000'
             }
         }
     ]
