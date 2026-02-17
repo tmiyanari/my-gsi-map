@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
     <meta charset="utf-8" />
-    <title>マイマップ - 完成版</title>
+    <title>マイマップ - 最終安定版</title>
     <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
     <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
     <link href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet" />
@@ -11,12 +11,13 @@
     <style>
         body { margin: 0; padding: 0; font-family: sans-serif; }
         #map { position: absolute; top: 0; bottom: 0; width: 100%; }
-        #ui { position: absolute; top: 10px; left: 10px; z-index: 10; display: flex; flex-direction: column; gap: 8px; width: 200px; }
-        .group { background: rgba(255,255,255,0.9); padding: 8px; border-radius: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.2); display: flex; flex-direction: column; gap: 5px; }
-        button { padding: 10px; cursor: pointer; border: 1px solid #ccc; border-radius: 4px; font-weight: bold; background: white; }
-        .layer-btns { display: flex; gap: 2px; }
-        .layer-btns button { flex: 1; padding: 5px; font-size: 11px; }
-        #status { font-size: 11px; color: #555; text-align: center; }
+        #ui { position: absolute; top: 10px; left: 10px; z-index: 10; display: flex; flex-direction: column; gap: 8px; width: 210px; }
+        .group { background: rgba(255,255,255,0.95); padding: 10px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); display: flex; flex-direction: column; gap: 8px; }
+        button { padding: 10px; cursor: pointer; border: 1px solid #ddd; border-radius: 5px; font-weight: bold; background: white; transition: 0.2s; }
+        button:hover { background: #f8f8f8; }
+        .layer-btns { display: flex; gap: 4px; }
+        .layer-btns button { flex: 1; padding: 6px; font-size: 11px; }
+        #status { font-size: 12px; color: #444; text-align: center; border-top: 1px solid #eee; pt: 5px; }
     </style>
 </head>
 <body>
@@ -33,55 +34,70 @@
         <button id="btn-add" style="background:#007bff; color:white; border:none;">📍 地点追加: OFF</button>
         <button id="btn-del" style="background:#dc3545; color:white; border:none;">🗑️ 選択削除</button>
         <button id="btn-save" style="background:#28a745; color:white; border:none;">☁️ GitHub保存</button>
-        <div id="status">準備中...</div>
+        <div id="status">システム起動中...</div>
     </div>
 </div>
 <div id="map"></div>
 
 <script>
-    // --- 1. 設定 ---
     const GITHUB_TOKEN = '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'; 
     const REPO_PATH = 'tmiyanari/my-gsi-map';
     const FILE_PATH = 'mydata.geojson';
 
-    // --- 2. 地図初期化 ---
     const map = new maplibregl.Map({
         container: 'map',
         style: {
             version: 8,
             glyphs: "https://fonts.openmaptiles.org/{fontstack}/{range}.pbf",
-            sources: { 'gsi': { type: 'raster', tiles: ['https://cyberjapandata.gsi.go.jp/xyz/std/{z}/{x}/{y}.png'], tileSize: 256, attribution: "地理院地図" } },
-            layers: [{ id: 'gsi-layer', type: 'raster', source: 'gsi' }]
+            sources: { 
+                'gsi': { type: 'raster', tiles: ['https://cyberjapandata.gsi.go.jp/xyz/std/{z}/{x}/{y}.png'], tileSize: 256, attribution: "地理院地図" },
+                'labels-src': { type: 'geojson', data: { type: 'FeatureCollection', features: [] } } // ラベル専用ソース
+            },
+            layers: [
+                { id: 'gsi-layer', type: 'raster', source: 'gsi' },
+                { 
+                    id: 'labels-layer', 
+                    type: 'symbol', 
+                    source: 'labels-src',
+                    layout: { 
+                        'text-field': ['get', 'name'], 
+                        'text-font': ['Open Sans Regular'], 
+                        'text-size': 14, 
+                        'text-offset': [0, 1.5], 
+                        'text-anchor': 'top' 
+                    },
+                    paint: { 'text-color': '#000', 'text-halo-color': '#fff', 'text-halo-width': 2 }
+                }
+            ]
         },
         center: [139.767, 35.681],
         zoom: 12
     });
 
-    // --- 3. 描画ツール (名前表示付き) ---
     const draw = new MapboxDraw({
         displayControlsDefault: false,
         styles: [
             { 'id': 'pts-off', 'type': 'circle', 'filter': ['all', ['==', '$type', 'Point'], ['==', 'meta', 'feature'], ['==', 'active', 'false']], 'paint': { 'circle-radius': 8, 'circle-color': '#ff4500', 'circle-stroke-width': 2, 'circle-stroke-color': '#fff' } },
-            { 'id': 'pts-on', 'type': 'circle', 'filter': ['all', ['==', '$type', 'Point'], ['==', 'meta', 'feature'], ['==', 'active', 'true']], 'paint': { 'circle-radius': 10, 'circle-color': '#ffff00', 'circle-stroke-width': 2, 'circle-stroke-color': '#000' } },
-            { 'id': 'lbls', 'type': 'symbol', 'filter': ['all', ['==', '$type', 'Point'], ['==', 'meta', 'feature']], 
-              'layout': { 'text-field': '{name}', 'text-font': ['Open Sans Regular'], 'text-size': 14, 'text-offset': [0, 1.3], 'text-anchor': 'top' },
-              'paint': { 'text-color': '#000', 'text-halo-color': '#fff', 'text-halo-width': 2 }
-            }
+            { 'id': 'pts-on', 'type': 'circle', 'filter': ['all', ['==', '$type', 'Point'], ['==', 'meta', 'feature'], ['==', 'active', 'true']], 'paint': { 'circle-radius': 10, 'circle-color': '#ffff00', 'circle-stroke-width': 2, 'circle-stroke-color': '#000' } }
         ]
     });
     map.addControl(draw);
 
-    // データ読み込み関数
+    // ラベル表示を更新する関数
+    const refreshLabels = () => {
+        const data = draw.getAll();
+        map.getSource('labels-src').setData(data);
+    };
+
     const loadToMap = (data) => {
         if (!data || !data.features) return;
         draw.deleteAll();
         data.features.forEach(f => {
-            const id = draw.add(f)[0];
-            draw.setFeatureProperty(id, 'name', f.properties.name || "無題");
+            draw.add(f);
         });
+        refreshLabels();
     };
 
-    // --- 4. 起動時処理 (ラグ対策・巻き戻り防止) ---
     map.on('load', async () => {
         const log = document.getElementById('status');
         const local = localStorage.getItem('map_backup');
@@ -89,7 +105,7 @@
         
         if (localData) {
             loadToMap(localData);
-            log.innerText = "バックアップ復元済み";
+            log.innerText = "バックアップ復元";
         }
 
         try {
@@ -102,15 +118,15 @@
                 if (gitTime >= localTime) {
                     loadToMap(gitData);
                     localStorage.setItem('map_backup', JSON.stringify(gitData));
-                    log.innerText = "最新データを同期";
+                    log.innerText = "GitHub最新同期";
                 } else {
-                    log.innerText = "GitHub反映待ち(ローカル優先)";
+                    log.innerText = "GitHub反映待ち...";
                 }
             }
-        } catch (e) { log.innerText = "オフライン"; }
+        } catch (e) { log.innerText = "オフライン動作中"; }
     });
 
-    // --- 5. 地図追加・ポップアップ ---
+    // --- 地点追加とポップアップ ---
     let addMode = false;
     document.getElementById('btn-add').onclick = () => {
         addMode = !addMode;
@@ -121,29 +137,40 @@
 
     map.on('click', (e) => {
         if (addMode) {
-            const name = prompt("場所の名前:");
+            const name = prompt("場所の名前を入力:");
             if (!name) return;
-            const id = draw.add({ type: 'Feature', properties: { name: name }, geometry: { type: 'Point', coordinates: [e.lngLat.lng, e.lngLat.lat] } })[0];
-            draw.setFeatureProperty(id, 'name', name);
+            draw.add({ type: 'Feature', properties: { name: name }, geometry: { type: 'Point', coordinates: [e.lngLat.lng, e.lngLat.lat] } });
+            refreshLabels();
         } else {
-            const fs = map.queryRenderedFeatures(e.point).filter(f => f.properties.name);
-            if (fs.length) {
-                new maplibregl.Popup().setLngLat(e.lngLat).setHTML(`<b>${fs[0].properties.name}</b>`).addTo(map);
+            // ポップアップ判定
+            const features = map.queryRenderedFeatures(e.point).filter(f => f.layer.id.includes('gl-draw-point'));
+            if (features.length > 0) {
+                // Drawの内部データから名前を引っ張る
+                const drawData = draw.getAll().features;
+                const target = drawData.find(d => d.geometry.coordinates[0].toFixed(5) === features[0].geometry.coordinates[0].toFixed(5));
+                const name = target ? target.properties.name : "名前なし";
+                
+                new maplibregl.Popup({ closeButton: false })
+                    .setLngLat(e.lngLat)
+                    .setHTML(`<div style="padding:5px;"><b>${name}</b></div>`)
+                    .addTo(map);
             }
         }
     });
 
     document.getElementById('btn-del').onclick = () => {
         const ids = draw.getSelectedIds();
-        if (ids.length && confirm("削除しますか？")) draw.delete(ids);
+        if (ids.length && confirm("削除しますか？")) {
+            draw.delete(ids);
+            refreshLabels();
+        }
     };
 
-    // --- 6. 保存 (巻き戻り防止スタンプ) ---
     document.getElementById('btn-save').onclick = async () => {
         const btn = document.getElementById('btn-save');
         btn.innerText = "保存中...";
         const data = draw.getAll();
-        data.last_updated = Date.now(); // ここで時間を刻印！
+        data.last_updated = Date.now();
         const content = JSON.stringify(data);
 
         try {
@@ -156,24 +183,24 @@
             });
             if (put.ok) {
                 localStorage.setItem('map_backup', content);
-                alert("保存完了！もう巻き戻りません。");
+                alert("保存完了しました！");
             }
-        } catch (e) { alert("保存失敗"); }
+        } catch (e) { alert("保存失敗: " + e.message); }
         btn.innerText = "☁️ GitHub保存";
     };
 
-    // --- 7. 地図切り替え再実装 ---
+    // 地図切り替え
     const switchLayer = (t) => {
         const urls = { 'std': 'std/{z}/{x}/{y}.png', 'pale': 'pale/{z}/{x}/{y}.png', 'ort': 'ort/{z}/{x}/{y}.jpg' };
+        map.setLayoutProperty('gsi-layer', 'visibility', 'none');
         map.removeLayer('gsi-layer');
         map.removeSource('gsi');
         map.addSource('gsi', { type: 'raster', tiles: [`https://cyberjapandata.gsi.go.jp/xyz/${urls[t]}`], tileSize: 256, attribution: "地理院地図" });
-        map.addLayer({ id: 'gsi-layer', type: 'raster', source: 'gsi' }, map.getStyle().layers[0].id);
+        map.addLayer({ id: 'gsi-layer', type: 'raster', source: 'gsi' }, 'labels-layer'); // ラベルの下に入れる
     };
     document.getElementById('btn-std').onclick = () => switchLayer('std');
     document.getElementById('btn-pale').onclick = () => switchLayer('pale');
     document.getElementById('btn-ort').onclick = () => switchLayer('ort');
-
 </script>
 </body>
 </html>
