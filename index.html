@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
     <meta charset="utf-8" />
-    <title>名前編集てすとマイマップ</title>
+    <title>名前編集てすマイマップ</title>
     <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
     <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
     <link href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet" />
@@ -142,37 +142,62 @@ map.on('click', (e) => {
             draw.add({ type: 'Feature', properties: { name: name }, geometry: { type: 'Point', coordinates: [e.lngLat.lng, e.lngLat.lat] } });
             refreshLabels();
         } else {
-            // ラベルレイヤーまたは地点レイヤーをクリック判定
+            // エラー回避：存在するレイヤー（labels-layer）だけをチェックする
             const features = map.queryRenderedFeatures(e.point, {
-                layers: ['labels-layer', 'gl-draw-point-static']
+                layers: ['labels-layer']
             });
 
             if (features.length > 0) {
-                // Drawのデータから最新の情報を取得
-                const drawData = draw.getAll().features;
-                const target = drawData.find(d => 
-                    d.geometry.coordinates[0].toFixed(5) === features[0].geometry.coordinates[0].toFixed(5)
-                );
+                const target = features[0];
+                const currentName = target.properties.name || "名前なし";
+                
+                // Draw内のIDを取得（MapLibreのFeature IDまたはプロパティから）
+                const featureId = target.id || target.properties.id;
 
-                if (target) {
-                    const currentName = target.properties.name || "名前なし";
-                    
-                    // ポップアップ内に「編集ボタン」を設置
-                    const popupContent = `
-                        <div style="padding:10px; min-width:120px;">
-                            <b id="popup-name">${currentName}</b><br>
-                            <button onclick="editName('${target.id}')" style="margin-top:8px; padding:4px 8px; font-size:11px; cursor:pointer;">✏️ 名前を変更</button>
-                        </div>
-                    `;
+                const popupContent = `
+                    <div style="padding:10px; min-width:120px;">
+                        <b id="popup-name">${currentName}</b><br>
+                        <button onclick="editName('${featureId}', ${e.lngLat.lng}, ${e.lngLat.lat})" 
+                                style="margin-top:8px; padding:4px 8px; font-size:11px; cursor:pointer;">✏️ 名前を変更</button>
+                    </div>
+                `;
 
-                    new maplibregl.Popup({ closeButton: true })
-                        .setLngLat(e.lngLat)
-                        .setHTML(popupContent)
-                        .addTo(map);
-                }
+                new maplibregl.Popup({ closeButton: true })
+                    .setLngLat(e.lngLat)
+                    .setHTML(popupContent)
+                    .addTo(map);
             }
         }
     });
+
+    // 名前編集関数（座標を使って確実に特定する版）
+    window.editName = (id, lng, lat) => {
+        // IDで検索するか、座標が一致するものを探す
+        let feature = draw.get(id);
+        
+        // もしIDで見つからない場合は座標で検索（MapLibreとDrawの同期ズレ対策）
+        if (!feature) {
+            const all = draw.getAll().features;
+            feature = all.find(f => 
+                Math.abs(f.geometry.coordinates[0] - lng) < 0.00001 && 
+                Math.abs(f.geometry.coordinates[1] - lat) < 0.00001
+            );
+        }
+
+        if (!feature) return alert("編集対象が見つかりませんでした");
+
+        const oldName = feature.properties.name || "";
+        const newName = prompt("新しい名前を入力:", oldName);
+        
+        if (newName !== null && newName !== "") {
+            draw.setFeatureProperty(feature.id, 'name', newName);
+            refreshLabels(); // 看板レイヤーを更新
+            
+            const nameEl = document.getElementById('popup-name');
+            if (nameEl) nameEl.innerText = newName;
+            document.getElementById('status').innerText = "名前を変更しました";
+        }
+    };
 
     // ★ 名前を書き換えるための関数 (グローバルに配置)
     window.editName = (id) => {
