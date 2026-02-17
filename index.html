@@ -2,49 +2,46 @@
 <html lang="ja">
 <head>
     <meta charset="utf-8" />
-    <title>geojson test version</title>
+    <title>geojson test 2 マイ地理院地図</title>
     <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
     <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
     <link href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet" />
     <style>
         body { margin: 0; padding: 0; }
-        #map { position: absolute; top: 0; bottom: 0; width: 100%; background-color: #f0f0f0; }
+        #map { position: absolute; top: 0; bottom: 0; width: 100%; }
     </style>
 </head>
 <body>
     <div id="map"></div>
     <script>
-        // 2. 地図の初期化
-        const map = new maplibregl.Map({ // ここが maplibregl に修正されています
-            map.on('load', () => {
-    // 1. クラウド上のGeoJSONファイルをソースとして登録
-    map.addSource('my-cloud-data', {
-        type: 'geojson',
-        data: './mydata.geojson' 
-    });
-
-    // 2. そのデータを「赤い丸」として表示する設定
-    map.addLayer({
-        id: 'points',
-        type: 'circle',
-        source: 'my-cloud-data',
-        paint: {
-            'circle-radius': 10,
-            'circle-color': '#FF0000',
-            'circle-stroke-width': 2,
-            'circle-stroke-color': '#ffffff'
-        }
-    });
-});
+        // maplibregl (ハイフンなし) を使用
+        const map = new maplibregl.Map({
             container: 'map',
+            // CORS回避のためOpenStreetMapのスタイルを使用
             style: 'https://tile.openstreetmap.jp/styles/osm-bright-ja/style.json',
             center: [139.767, 35.681],
-            zoom: 12,
-            hash: true // URLに座標が残るように設定
+            zoom: 12
         });
 
-        // 3. ナビゲーションコントロール（ズームボタン）追加
-        map.addControl(new maplibregl.NavigationControl());
+        map.on('load', () => {
+            // クラウド上のmydata.geojsonを読み込む
+            map.addSource('my-cloud-data', {
+                type: 'geojson',
+                data: './mydata.geojson' 
+            });
+
+            map.addLayer({
+                id: 'points',
+                type: 'circle',
+                source: 'my-cloud-data',
+                paint: {
+                    'circle-radius': 10,
+                    'circle-color': '#FF4500', // オレンジレッド
+                    'circle-stroke-width': 2,
+                    'circle-stroke-color': '#ffffff'
+                }
+            });
+        });
     </script>
 </body>
 </html>
