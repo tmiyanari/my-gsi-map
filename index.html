@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
     <meta charset="utf-8" />
-    <title>！編集GIS</title>
+    <title>？！編集GIS</title>
     <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
     <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
     <link href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet" />
@@ -27,26 +27,8 @@
 
     <script>
         // 1. 地図初期化
-        const map = new maplibregl.Map({
-            container: 'map',
-            style: {
-                version: 8,
-                sources: {
-                    'gsi-tiles': {
-                        type: 'raster',
-                        tiles: ['https://cyberjapandata.gsi.go.jp/xyz/std/{z}/{x}/{y}.png'],
-                        tileSize: 256,
-                        attribution: "地理院地図"
-                    }
-                },
-                layers: [{ id: 'gsi-layer', type: 'raster', source: 'gsi-tiles' }]
-            },
-            center: [139.767, 35.681],
-            zoom: 12
-        });
-      map.on('load', async () => {
+map.on('load', async () => {
     try {
-        // キャッシュを避けるため、URLの末尾に時間を付ける（重要！）
         const timestamp = new Date().getTime();
         const url = `https://raw.githubusercontent.com/tmiyanari/my-gsi-map/main/mydata.geojson?t=${timestamp}`;
 
@@ -55,11 +37,18 @@
 
         const data = await res.json();
 
-        // 読み込んだデータを描画ツールに追加
+        // --- ここから修正 ---
         if (data.features && data.features.length > 0) {
+            // 1. 今ある描画データを一旦全部消す（重複防止）
+            draw.deleteAll();
+            
+            // 2. GitHubから取得した全データを追加
             draw.add(data);
-            console.log(`${data.features.length} 件の地点を読み込みました`);
+            
+            console.log(`${data.features.length} 件の地点をすべて読み込みました`);
         }
+        // --- ここまで修正 ---
+        
     } catch (err) {
         console.error("読み込みエラー:", err);
     }
