@@ -105,23 +105,23 @@ const draw = new MapboxDraw({
             'paint': { 'circle-radius': 12, 'circle-color': '#ffff00', 'circle-stroke-width': 2, 'circle-stroke-color': '#000' }
         },
         // 3. 【新設】名前を表示するレイヤー
-        {
-            'id': 'points-labels',
-            'type': 'symbol',
-            'filter': ['all', ['==', '$type', 'Point'], ['==', 'meta', 'feature']],
-            'layout': {
-                'text-field': ['get', 'name'], // properties内のnameを表示
-                'text-variable-anchor': ['top', 'bottom', 'left', 'right'],
-                'text-radial-offset': 1.2, // 点から少し離す
-                'text-justify': 'auto',
-                'text-size': 14
-            },
-            'paint': {
-                'text-color': '#000',
-                'text-halo-color': '#fff', // 文字の周りに白縁をつけて見やすく
-                'text-halo-width': 2
-            }
-        },
+       {
+    'id': 'points-labels',
+    'type': 'symbol',
+    'filter': ['all', ['==', '$type', 'Point'], ['==', 'meta', 'feature']],
+    'layout': {
+        'text-field': ['get', 'name'], // ← ここが properties.name と一致しているか
+        'text-size': 16,
+        'text-font': ['Open Sans Regular'], // glyphsにあるフォント名を指定（省略可）
+        'text-offset': [0, 1.5],
+        'text-anchor': 'top'
+    },
+    'paint': {
+        'text-color': '#000000',
+        'text-halo-color': '#ffffff',
+        'text-halo-width': 2
+    }
+},
         // 4. 移動・ドラッグ用の設定（赤点）
         {
             'id': 'points-drag',
