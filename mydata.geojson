@@ -47,6 +47,21 @@
       }
     },
     {
+      "id": "b4c5fddbbb132036395e130d32aa085f",
+      "type": "Feature",
+      "properties": {
+        "name": "新規地点",
+        "time": "15:22:14"
+      },
+      "geometry": {
+        "coordinates": [
+          139.73501639970976,
+          35.66920209801786
+        ],
+        "type": "Point"
+      }
+    },
+    {
       "id": "7d3778ecc71e49be2ad6a723776fee26",
       "type": "Feature",
       "properties": {
