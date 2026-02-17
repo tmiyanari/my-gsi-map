@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
     <meta charset="utf-8" />
-    <title>マイマップ - 最終安定版</title>
+    <title>マイマップ</title>
     <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
     <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
     <link href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet" />
@@ -135,24 +135,24 @@
         btn.style.background = addMode ? "#ff4500" : "#007bff";
     };
 
-    map.on('click', (e) => {
+map.on('click', (e) => {
         if (addMode) {
             const name = prompt("場所の名前を入力:");
             if (!name) return;
             draw.add({ type: 'Feature', properties: { name: name }, geometry: { type: 'Point', coordinates: [e.lngLat.lng, e.lngLat.lat] } });
             refreshLabels();
         } else {
-            // ポップアップ判定
-            const features = map.queryRenderedFeatures(e.point).filter(f => f.layer.id.includes('gl-draw-point'));
+            // ★ここを修正：名前が表示されている「labels-layer」を直接クリック判定する
+            const features = map.queryRenderedFeatures(e.point, {
+                layers: ['labels-layer'] // ラベルレイヤーを狙い撃ち
+            });
+
             if (features.length > 0) {
-                // Drawの内部データから名前を引っ張る
-                const drawData = draw.getAll().features;
-                const target = drawData.find(d => d.geometry.coordinates[0].toFixed(5) === features[0].geometry.coordinates[0].toFixed(5));
-                const name = target ? target.properties.name : "名前なし";
+                const name = features[0].properties.name || "名前なし";
                 
-                new maplibregl.Popup({ closeButton: false })
+                new maplibregl.Popup({ closeButton: true }) // 閉じボタンあり
                     .setLngLat(e.lngLat)
-                    .setHTML(`<div style="padding:5px;"><b>${name}</b></div>`)
+                    .setHTML(`<div style="padding:8px; font-size:14px;"><b>${name}</b></div>`)
                     .addTo(map);
             }
         }
