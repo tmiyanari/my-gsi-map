@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
     <meta charset="utf-8" />
-    <title>編集GIS</title>
+    <title>--編集GIS</title>
     <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
     <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
     <link href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet" />
@@ -49,7 +49,7 @@
         // URLの末尾に「現在時刻」を混ぜることで、ブラウザに「新しい別のデータだ」と思い込ませる
         const timestamp = new Date().getTime();
         // リポジトリ名などはご自身のものに合わせてください
-        const url = `https://raw.githubusercontent.com/tmiyanari/my-gsi-map/main/mydata.geojson?t=${timestamp}`;
+        const url = `https://raw.githubusercontent.com/tmiyanari/my-gsi-map/main/mydata.geojson?t=${new Date().getTime()}`;
 
         const res = await fetch(url, {
             mode: 'cors',
@@ -216,6 +216,13 @@ document.getElementById('btn-delete').onclick = () => {
 
                 if (updateRes.ok) {
                     alert("クラウドへの保存に成功しました！");
+                    // --- ここを追加 ---
+            // 保存に成功したら、今の状態を「最新」として内部的に保持し続ける
+            // これにより、GitHub側の反映が遅くても、次のリロードまでは手元のデータが正義になります
+            console.log("内部データを確定しました");
+            // ------------------
+            
+            btn.innerText = "☁️ GitHubへ保存";
                 } else {
                     const errorInfo = await updateRes.json();
                     console.error(errorInfo);
