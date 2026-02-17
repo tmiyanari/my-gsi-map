@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
     <meta charset="utf-8" />
-    <title>--編集GIS!</title>
+    <title>-編集GIS</title>
     <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
     <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
     <link href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet" />
@@ -44,26 +44,29 @@
             center: [139.767, 35.681],
             zoom: 12
         });
-      map.on('load', async () => {
+     map.on('load', async () => {
     try {
-        // キャッシュを完全に無視するための設定を追加
-        const url = `https://raw.githubusercontent.com/tmiyanari/my-gsi-map/main/mydata.geojson?t=${new Date().getTime()}`;
+        // URLの末尾に「現在時刻」を混ぜることで、ブラウザに「新しい別のデータだ」と思い込ませる
+        const timestamp = new Date().getTime();
+        // リポジトリ名などはご自身のものに合わせてください
+        const url = `https://raw.githubusercontent.com/tmiyanari/my-gsi-map/main/mydata.geojson?t=${timestamp}`;
 
         const res = await fetch(url, {
-            cache: 'no-store' // ブラウザに「保存されたデータを使うな」と命令
+            mode: 'cors',
+            cache: 'no-store' // ブラウザのキャッシュ（記憶）を使わない設定
         });
-        
-        if (!res.ok) throw new Error("読み込み失敗");
+
+        if (!res.ok) throw new Error("データの取得に失敗しました");
 
         const data = await res.json();
 
         if (data.features) {
-            draw.deleteAll(); // 一旦空にする
-            draw.add(data);   // 最新データを全部入れる
-            console.log("読み込み成功！件数:", data.features.length);
+            draw.deleteAll();
+            draw.add(data);
+            console.log("最新データを読み込みました！");
         }
     } catch (err) {
-        console.error("エラー:", err);
+        console.error("読み込みエラー:", err);
     }
 });
         // 2. 描画ツール初期化
