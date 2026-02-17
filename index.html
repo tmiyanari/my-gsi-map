@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
     <meta charset="utf-8" />
-    <title>-編集GIS</title>
+    <title>編集GIS</title>
     <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
     <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
     <link href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet" />
@@ -66,7 +66,32 @@
 });
 
         // 2. 描画ツール初期化
-        const draw = new MapboxDraw({ displayControlsDefault: false });
+        const draw = new MapboxDraw({
+    displayControlsDefault: false,
+    // スタイルのカスタマイズ
+    styles: [
+        // 1. 点（確定済み）の見た目
+        {
+            'id': 'gl-draw-point-static',
+            'type': 'circle',
+            'filter': ['all', ['==', '$type', 'Point'], ['==', 'mode', 'static']],
+            'paint': {
+                'circle-radius': 10, // ★ここで大きさを指定（標準は5くらい）
+                'circle-color': '#ff4500' // ★点の色
+            }
+        },
+        // 2. 点（アクティブ/編集中）の見た目
+        {
+            'id': 'gl-draw-point-active',
+            'type': 'circle',
+            'filter': ['all', ['==', '$type', 'Point'], ['!=', 'mode', 'static']],
+            'paint': {
+                'circle-radius': 12, // ★編集中はさらに少し大きく
+                'circle-color': '#ffff00'
+            }
+        }
+    ]
+});
         map.addControl(draw);
 
         let isAddMode = false;
