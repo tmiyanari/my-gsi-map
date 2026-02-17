@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
     <meta charset="utf-8" />
-    <title>完全復活！編集GIS</title>
+    <title>編集GIS</title>
     <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
     <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
     <link href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet" />
@@ -74,23 +74,40 @@
                 });
                 logDiv.innerText = `「${locationName}」を追加`;
                 console.log("最新GeoJSON:", JSON.stringify(draw.getAll()));
-            } else {
-                // --- ポップアップ表示モードの処理 ---
-                const bbox = [[e.point.x - 5, e.point.y - 5], [e.point.x + 5, e.point.y + 5]];
-                const features = map.queryRenderedFeatures(bbox, {
-                    layers: ['gl-draw-point-static.cold', 'gl-draw-point-active.cold', 'gl-draw-point-static.hot']
+            }} else {
+                // --- ポップアップ表示モードの処理（強化版） ---
+                
+                // 現在地図に描画されている全データを取得
+                const allData = draw.getAll();
+                
+                // クリックした地点の座標（e.lngLat）に近い地点を探す
+                const clickedPoint = [e.lngLat.lng, e.lngLat.lat];
+                
+                // もっとも近いフィーチャを探す（簡易的な距離判定）
+                const clickedFeature = allData.features.find(f => {
+                    if (f.geometry.type !== 'Point') return false;
+                    const coords = f.geometry.coordinates;
+                    // 緯度経度の差がごくわずか（約100m以内）なら「クリックした」とみなす
+                    return Math.abs(coords[0] - clickedPoint[0]) < 0.001 && 
+                           Math.abs(coords[1] - clickedPoint[1]) < 0.001;
                 });
 
-                if (features.length > 0) {
-                    const featId = features[0].properties.id;
-                    const f = draw.get(featId);
-                    if (f) {
-                        new maplibregl.Popup()
-                            .setLngLat(e.lngLat)
-                            .setHTML(`<strong>${f.properties.name}</strong><br><small>${f.properties.time}</small>`)
-                            .addTo(map);
-                    }
+                if (clickedFeature) {
+                    const name = clickedFeature.properties.name || "名称未設定";
+                    const time = clickedFeature.properties.time || "不明";
+
+                    new maplibregl.Popup()
+                        .setLngLat(clickedFeature.geometry.coordinates)
+                        .setHTML(`
+                            <div style="font-family:sans-serif; padding:5px;">
+                                <strong style="color:#ff4500; font-size:1.1em;">${name}</strong><br>
+                                <hr style="margin:5px 0; border:0; border-top:1px solid #eee;">
+                                <small>登録時刻: ${time}</small>
+                            </div>
+                        `)
+                        .addTo(map);
                 }
+            }
             }
         });
     </script>
