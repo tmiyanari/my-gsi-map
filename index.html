@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
     <meta charset="utf-8" />
-    <title>＿編集GIS</title>
+    <title>編集GIS</title>
     <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
     <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
     <link href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet" />
@@ -45,42 +45,40 @@
             zoom: 12
         });
 // 地図読み込み時の処理
-        map.on('load', async () => {
-            // 1. まず、ブラウザのバックアップから即座に表示（ラグ対策）
-            const localData = localStorage.getItem('map_data_backup');
-            if (localData) {
-                try {
-                    draw.add(JSON.parse(localData));
-                    console.log("ローカルバックアップから復元しました");
-                } catch (e) {
-                    console.error("バックアップの読み込みに失敗:", e);
-                }
+       map.on('load', async () => {
+    // 1. ローカルバックアップを読み込む
+    const localDataRaw = localStorage.getItem('map_data_backup');
+    let localData = localDataRaw ? JSON.parse(localDataRaw) : null;
+
+    if (localData) {
+        draw.add(localData);
+        console.log("ローカルバックアップを表示しました");
+    }
+
+    try {
+        const url = `https://raw.githubusercontent.com/${REPO_PATH}/main/${FILE_PATH}?t=${new Date().getTime()}`;
+        const res = await fetch(url, { cache: 'no-store' });
+
+        if (res.ok) {
+            const githubData = await res.json();
+            
+            // ★【ここが重要】GitHubのデータがローカルより新しい場合だけ更新する
+            const localTime = localData?.last_updated || 0;
+            const githubTime = githubData.last_updated || 0;
+
+            if (githubTime >= localTime) {
+                draw.deleteAll();
+                draw.add(githubData);
+                localStorage.setItem('map_data_backup', JSON.stringify(githubData));
+                console.log("GitHubの方が新しいので同期しました");
+            } else {
+                console.log("GitHubがまだ古い（反映待ち）ので、ローカルデータを優先します");
             }
-
-            try {
-                // 2. GitHubから最新データを強制取得
-                const timestamp = new Date().getTime();
-                const url = `https://raw.githubusercontent.com/${REPO_PATH}/main/${FILE_PATH}?t=${timestamp}`;
-
-                const res = await fetch(url, {
-                    mode: 'cors',
-                    cache: 'no-store'
-                });
-
-                if (res.ok) {
-                    const data = await res.json();
-                    if (data.features) {
-                        draw.deleteAll(); // バックアップを消して最新版に差し替え
-                        draw.add(data);
-                        // 最新版をまたバックアップに保存
-                        localStorage.setItem('map_data_backup', JSON.stringify(data));
-                        console.log("GitHubから最新データを同期しました！");
-                    }
-                }
-            } catch (err) {
-                console.error("GitHub同期エラー:", err);
-            }
-        });
+        }
+    } catch (err) {
+        console.error("同期エラー:", err);
+    }
+});
         // 2. 描画ツール初期化
 const draw = new MapboxDraw({
     displayControlsDefault: false,
@@ -198,7 +196,10 @@ document.getElementById('btn-delete').onclick = () => {
             const originalText = btn.innerText;
             btn.innerText = "保存中...";
             btn.disabled = true; // 二重押し防止
-            
+            // draw.getAll() で取得したデータに、今の時間を刻印する
+const rawData = draw.getAll();
+rawData.last_updated = new Date().getTime(); // ★これを追加
+const content = JSON.stringify(rawData, null, 2);
             const content = JSON.stringify(draw.getAll(), null, 2);
             const message = "地図データを更新: " + new Date().toLocaleString();
 
