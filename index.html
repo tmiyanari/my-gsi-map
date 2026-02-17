@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
     <meta charset="utf-8" />
-    <title>復活！編集できる地理院地図</title>
+    <title>編集できる地理院地図</title>
     <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
     <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
     <link href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet" />
@@ -67,22 +67,30 @@
 
         // 地図のクリックイベント
         map.on('click', (e) => {
-            if (!isAddMode) return;
+    if (!isAddMode) return;
 
-            // 座標取得
-            const coords = [e.lngLat.lng, e.lngLat.lat];
-            
-            // 描画ツールに点を追加
-            draw.add({
-                type: 'Feature',
-                properties: { name: '新規地点', time: new Date().toLocaleTimeString() },
-                geometry: { type: 'Point', coordinates: coords }
-            });
+    // 1. ユーザーに入力を求める（簡易的な入力フォーム）
+    const locationName = prompt("場所の名前を入力してください", "新規地点");
+    
+    // キャンセルされた場合は中断
+    if (locationName === null) return;
 
-            // ログ更新
-            logDiv.innerText = `追加完了: ${coords[0].toFixed(5)}, ${coords[1].toFixed(5)}`;
-            console.log("現在の全GeoJSONデータ:", JSON.stringify(draw.getAll()));
-        });
+    const coords = [e.lngLat.lng, e.lngLat.lat];
+    
+    // 2. 描画ツールにデータを追加（入力された名前をプロパティに入れる）
+    draw.add({
+        type: 'Feature',
+        properties: { 
+            name: locationName, 
+            time: new Date().toLocaleString() 
+        },
+        geometry: { type: 'Point', coordinates: coords }
+    });
+
+    // 3. ログとコンソールを更新
+    logDiv.innerText = `「${locationName}」を追加しました`;
+    console.log("最新のGeoJSON:", JSON.stringify(draw.getAll()));
+});
     </script>
 </body>
 </html>
