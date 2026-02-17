@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
     <meta charset="utf-8" />
-    <title>名前編集てマイマップ</title>
+    <title>名前編集マイマップ</title>
     <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
     <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
     <link href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet" />
@@ -226,24 +226,49 @@ window.editName = (id, lng, lat) => {
         }
     };
 
-    // ★ 名前を書き換えるための関数 (グローバルに配置)
-    window.editName = (id) => {
-        const feature = draw.get(id);
-        const oldName = feature.properties.name || "";
-        const newName = prompt("新しい名前を入力してください:", oldName);
+// --- 名前編集関数 (ここから) ---
+window.editName = function(id, lng, lat) {
+    // 1. まずはIDで検索
+    let feature = draw.get(id);
+    
+    // 2. IDで見つからない場合、座標の近さで検索
+    if (!feature) {
+        const allFeatures = draw.getAll().features;
+        feature = allFeatures.find(f => {
+            const coords = f.geometry.coordinates;
+            // 座標の誤差が非常に小さいものを特定
+            return Math.abs(coords[0] - lng) < 0.0001 && 
+                   Math.abs(coords[1] - lat) < 0.0001;
+        });
+    }
+
+    // 3. 検索に失敗した場合のガード（ここでの return は関数内なのでOK）
+    if (!feature) {
+        alert("地点を特定できませんでした。");
+        return; 
+    }
+
+    // 4. 実際の編集処理
+    const oldName = feature.properties.name || "";
+    const newName = prompt("新しい名前を入力:", oldName);
+    
+    if (newName !== null && newName !== "") {
+        // Draw側のデータを更新
+        draw.setFeatureProperty(feature.id, 'name', newName);
         
-        if (newName !== null && newName !== "") {
-            // Drawのデータを更新
-            draw.setFeatureProperty(id, 'name', newName);
-            // ラベルレイヤー（看板）も更新
+        // 看板（ラベル）を更新
+        if (typeof refreshLabels === 'function') {
             refreshLabels();
-            // ポップアップの表示も即座に更新
-            const nameEl = document.getElementById('popup-name');
-            if (nameEl) nameEl.innerText = newName;
-            
-            document.getElementById('status').innerText = "名前を変更しました（保存を忘れずに）";
         }
-    };
+        
+        // ポップアップ内の表示も即座に書き換え
+        const nameEl = document.getElementById('popup-name');
+        if (nameEl) nameEl.innerText = newName;
+        
+        document.getElementById('status').innerText = "名前を更新しました";
+    }
+};
+// --- 名前編集関数 (ここまで) ---
 
     document.getElementById('btn-del').onclick = () => {
         const ids = draw.getSelectedIds();
