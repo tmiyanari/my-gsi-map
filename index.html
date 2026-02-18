@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
     <meta charset="utf-8" />
-    <title>！スプレッドシート同期地図</title>
+    <title>スプレッドシート同期地図</title>
     <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
     <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
     <link href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet" />
@@ -50,7 +50,17 @@
 <script>
     const GAS_URL = 'https://script.google.com/macros/s/AKfycbzO7vXb4XxOXv3BZo6QsTK_J3ZF8uCIeKR20tpLmDFOwrH7GlIskITbE54XjpzXFAlm/exec';
 
-    // 1. 状態の復元
+    // --- 1. 設定データ（一番上に配置） ---
+    const layers = {
+        'std': { name: '標準地図', url: 'std/{z}/{x}/{y}.png' },
+        'pale': { name: '淡色地図', url: 'pale/{z}/{x}/{y}.png' },
+        'blank': { name: '白地図', url: 'blank/{z}/{x}/{y}.png' },
+        'english': { name: 'English', url: 'english/{z}/{x}/{y}.png' },
+        'ort': { name: '写真', url: 'ort/{z}/{x}/{y}.jpg' },
+        'relief': { name: '色別標高図', url: 'relief/{z}/{x}/{y}.png' }
+    };
+
+    // --- 2. 保存された状態の読み込み ---
     const lastState = JSON.parse(localStorage.getItem('map-state')) || {
         center: [139.767, 35.681],
         zoom: 12,
@@ -61,23 +71,19 @@
     let currentSheet = lastState.sheet;
     let currentLayer = lastState.layer;
 
-    const layers = {
-        'std': { name: '標準地図', url: 'std/{z}/{x}/{y}.png' },
-        'pale': { name: '淡色地図', url: 'pale/{z}/{x}/{y}.png' },
-        'blank': { name: '白地図', url: 'blank/{z}/{x}/{y}.png' },
-        'english': { name: 'English', url: 'english/{z}/{x}/{y}.png' },
-        'ort': { name: '写真', url: 'ort/{z}/{x}/{y}.jpg' },
-        'relief': { name: '色別標高図', url: 'relief/{z}/{x}/{y}.png' }
-    };
-
-    // 2. 地図初期化（真っ白防止のため初期スタイルを定義）
+    // --- 3. 地図の初期化 ---
     const map = new maplibregl.Map({
         container: 'map',
         style: {
             version: 8,
             glyphs: "https://fonts.openmaptiles.org/{fontstack}/{range}.pbf",
             sources: { 
-                'gsi': { type: 'raster', tiles: [`https://cyberjapandata.gsi.go.jp/xyz/${layers[currentLayer].url}`], tileSize: 256, attribution: "地理院地図" },
+                'gsi': { 
+                    type: 'raster', 
+                    tiles: [`https://cyberjapandata.gsi.go.jp/xyz/${layers[currentLayer].url}`], 
+                    tileSize: 256, 
+                    attribution: "地理院地図" 
+                },
                 'labels-src': { type: 'geojson', data: { type: 'FeatureCollection', features: [] } }
             },
             layers: [{ id: 'gsi-layer', type: 'raster', source: 'gsi' }]
@@ -95,7 +101,7 @@
     });
     map.addControl(draw);
 
-    // セレクトボックス生成
+    // セレクトボックスの生成
     const layerSelect = document.getElementById('layer-select');
     for (const key in layers) {
         const opt = document.createElement('option');
@@ -246,7 +252,7 @@
                                 <b style="font-size:15px; display:block; margin-bottom:5px;">${name}</b>
                                 <div id="addr-text" style="color:#666; font-size:11px; margin-bottom:8px;">住所を取得中...</div>
                                 <hr style="border:0; border-top:1px dashed #ccc; margin:8px 0;">
-                                <a href="https://www.google.com/maps/search/?api=1&query=${lat},${lng}" target="_blank" 
+                                <a href="https://www.google.com/maps?q=${lat},${lng}" target="_blank" 
                                    style="display:block; text-align:center; background:#4285f4; color:white; text-decoration:none; padding:8px; border-radius:4px; font-weight:bold; margin-bottom:10px;">
                                     🌐 Googleマップで開く
                                 </a>
